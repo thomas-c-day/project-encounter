@@ -1,4 +1,4 @@
-function [n_frac, b_frac, n_track, b_track, NumInd] = RUN_SINGLE_SIMULATION_STATES(Nrounds, G0, alpha, phi, Dct, Mu, K_m, Delta, Kappa, CellDivisionThreshold, CellDeathThreshold, FigViz)
+function [n_frac, b_frac, n_track, b_track, NumInd] = RUN_SINGLE_SIMULATION_STATES(Nrounds, G0, alpha, phi, Dct, Mu, K_m, Delta, Kappa, CellDivisionThreshold, CellDeathThreshold, FigViz, SIMPLE_RANDOM_SWITCH)
     % Run one simulation of a competition between two different states
     % within one genotype over a number of selection rounds. The two
     % different states will represent a single-celled state and a
@@ -56,8 +56,11 @@ function [n_frac, b_frac, n_track, b_track, NumInd] = RUN_SINGLE_SIMULATION_STAT
             ExpectedEncounters = ASSIGN_ENCOUNTER_RATES_STATES(n_track{tt}, b_track{tt}, G0, alpha, phi, Dct);
     
             % 1. All individuals grab the resources they can:
-            ResourcesPerCapita = ALLOCATE_RESOURCES_SIMPLY_STATES(n_track{tt}, b_track{tt}, ExpectedEncounters);
-            % ResourcesPerCapita = ALLOCATE_RESOURCES_RANDOMLY_STATES(n_track{tt}, b_track{tt}, ExpectedEncounters);
+            if SIMPLE_RANDOM_SWITCH == 1
+                ResourcesPerCapita = ALLOCATE_RESOURCES_SIMPLY_STATES(n_track{tt}, b_track{tt}, ExpectedEncounters);
+            else
+                ResourcesPerCapita = ALLOCATE_RESOURCES_RANDOMLY_STATES(n_track{tt}, b_track{tt}, ExpectedEncounters);
+            end
     
             % 2. Assign a growth rate according to their encounters:
             SpecificGrowthRates = SPECIFIC_GROWTH_RATES_STATES(n_track{tt}, ResourcesPerCapita, Mu, K_m);
