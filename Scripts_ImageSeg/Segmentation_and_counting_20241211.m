@@ -32,14 +32,11 @@ FIGVIZ     = 4;                    % Show the figures [0=No, ...
 SAVEDATA   = 0;                    % T/F save data [0=No, 1=Yes]
 
 % Folders where images are saved:
-TDfolder   = 'F:\00_USC\03_Data_ProjectEncounter\20241211_Micobeads\TD_c\';
-SPfolder   = 'F:\00_USC\03_Data_ProjectEncounter\20241211_Micobeads\TD_c\Probs\';
-GFPfolder  = 'F:\00_USC\03_Data_ProjectEncounter\20241211_Micobeads\GFP\';
-% savefolder = 'D:\00_USC\03_Data_ProjectEncounter\20241211_Micobeads\20241230\';
-% TDfolder   = 'F:\00_USC\03_Data_ProjectEncounter\20250402_Microbeads\TD\';
-% SPfolder   = 'F:\00_USC\03_Data_ProjectEncounter\20250402_Microbeads\Probs\';
-% GFPfolder  = 'F:\00_USC\03_Data_ProjectEncounter\20250402_Microbeads\GFP\';
-% savefolder = 'F:\00_USC\03_Data_ProjectEncounter\20250402_Microbeads\';
+% ************ You will need to mdify these lines to find the images you would like to analyze ******************
+TDfolder   = '';
+SPfolder   = '';
+GFPfolder  = '';
+% savefolder = '';
 
 % Datafiles:
 TDfilelist  = dir([TDfolder,'*.tif']);              % list of the brightfield images
