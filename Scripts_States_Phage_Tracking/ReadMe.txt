@@ -1,0 +1,1 @@
+This folder contains the updated/newest version of the cell states simulation presented in Figure 6 a and b. This is a simulation that is updated from Figure 5 to include both food interactions and toxic particle interactions. Call the sscript with the file "Sweep_Phage_BS_Track_TimeSize_S2.m".
