@@ -2,8 +2,8 @@
 % Figure generation script for Project Encounter.
 % February version after re-doing some experiments.
 
-PRINT_FIGURES = 0;
-drive_folder = 'E';
+PRINT_FIGURES = 1;
+drive_folder = 'G';
 printfolder = [drive_folder,':\My Drive\04_Manuscripts\02_ProjectEncounter\'];
 res = '-r400';
 big_width = 17.8;
@@ -349,7 +349,7 @@ axD = axes('position',[.72,.07,.27,.32]);
 hold on; box on; set(gca,'linewidth',1);
 plot(Bins24, Counts24, '-','linewidth',2,'color',[.3,.3,.3]);
 plot(Bins48, Counts48, '-','linewidth',2,'color',[.6,.6,.6]);
-xlabel('Aggregate Diameter [\mum]');
+xlabel('Group Diameter [\mum]');
 ylabel('PDF');
 set(gca,'yscale','linear');
 set(gca,'layer','top');
@@ -371,6 +371,7 @@ annotation('textbox',[.65,.33,.10,.10],'string','d','fontsize',9,'fontweight','b
 % Print figure:
 if PRINT_FIGURES
     print([printfolder,'Figure_01'],'-dpng',res);
+    exportgraphics(gcf,'Figure_01.pdf');
     close(gcf);
 end
 
@@ -393,6 +394,7 @@ img_b = imread([img_folder,'Glamour_Shot_Zoomout.png']);
 img_a = imread([img_folder,'Composite-1.png']);
 
 % Crop the images a bit:
+img_b_MicronsPerPixel = 1004./size(img_b,1);
 img_b = permute(img_b,[2,1,3]);
 img_b = fliplr(img_b(10:7e3,:,:));
 % (2e3:7e3,2e3:7e3,:);
@@ -436,6 +438,8 @@ ix_track = [ix_R05; ix_R10; ix_R15; ix_R20];
 P = zeros(length(ix_track), length(t_list));
 for tt = 1:length(t_list)
     W = LOAD_DATA_BIN_CALIBRATE_TIMETRACKS([fig_folder,'02_Timelapse\A\',t_list(tt).name], FilterFLPerArea, MinSize, 1);
+    disp(length(W.AggregateRadiusFilt));
+    disp(t_list(tt));
     P(:,tt) = W.Avg_Rad(ix_track, 3);
     S(:,tt) = W.Avg_Rad(ix_track, 4)./sqrt(W.N_Rad(ix_track));
 end
@@ -468,7 +472,9 @@ figure('units','centimeters','position',[3,3,big_width,12]);
 % PLOT A: -----------------------------------------------------------------
 % Microbeads and aggregates in suspension, and confocal image:
 ax_a = axes('position',[0,.50,.33,.50]);
-imshow(img_b);
+imshow(img_b); hold on;
+x_loc = 100; y_loc = 6.7e3; ScaleBarLength = 100;
+quiver(x_loc, y_loc, ScaleBarLength/img_b_MicronsPerPixel, 0, 'ShowArrowHead', 'off','color','k','linewidth',3);
 
 % Box annotation:
 T = annotation('rectangle');
@@ -506,8 +512,8 @@ yticks([1,3,10,30,100]);
 set(gca,'fontsize',7);
 set(gca,'TickLength',[.02,.02]);
 set(gca,'layer','top');
-xlabel('Aggregate Radius [\mum]');
-ylabel('# Beads');
+xlabel('Group Radius [\mum]');
+ylabel('# Microbeads');
 
 % Text additions:
 legend([p3],{'p = A(r_a + r_b)^{\lambda}'},'location','northwest','fontsize',8);
@@ -539,9 +545,10 @@ for cc = 1:length(Cbins)
     errorbar(Y(cc).Avg_Particles(:,1), Y(cc).Bins_Particles, 0.6, 0.6, Y(cc).Avg_Particles(:,2), Y(cc).Avg_Particles(:,2), 'd','markersize',6,'markerfacecolor',Colors(cc,:),'markeredgecolor','k','linewidth',1,'color','k');
     ph(cc) = plot(Y(cc).X_Particles(:,2), Y(cc).R_Particles, '-','linewidth',1,'color',Colors(cc,:));
 end
-xlabel('Radius [um]');
+xlabel('Group radius [um]');
 ylabel('No. Beads');
-xlim([3, 50]);
+xlim([3, 40]);
+xticks([5,10,30]);
 ylim([6e-1, 100]);
 set(gca,'yscale','log');
 set(gca,'xscale','log');
@@ -565,7 +572,7 @@ for ii = 1:length(ix_track)
 end
 set(gca,'layer','top');
 xlabel('Time [min]');
-ylabel('No. Particles');
+ylabel('No. Beads');
 LegendLabels = {};
 for ii = 1:length(ix_track)
     LegendLabels{ii} = [num2str(Radii_avg(ii),3), ' \pm ', num2str(Radii_err(ii),2), '\mum'];
@@ -582,7 +589,7 @@ hold on; box on; set(gca,'linewidth',1);
 for ss = 1:length(Z)
     bar(ss, Slope(ss), 0.75, 'facecolor',Colors(ss,:), 'edgecolor','k','linewidth',1,'facealpha',1);
 end
-errorbar(1:length(SSlist), Slope, SlopeE, '.','markersize',1,'color','k','linewidth',1,'capsize',6);
+errorbar(1:length(SSlist), Slope, 2*SlopeE, '.','markersize',1,'color','k','linewidth',1,'capsize',6);
 xlim([.5, 3.5]);
 ylim([2, 3]);
 xlabel('Shaking Speed [rpm]');
@@ -622,6 +629,7 @@ annotation('textbox',[.75,.40,.10,.10],'string','e','fontsize',9,'fontweight','b
 % Print figure:
 if PRINT_FIGURES    
     print([printfolder,'Figure_02'],'-dpng',res);
+    exportgraphics(gcf,'Figure_02.pdf');
     close(gcf);
 end
 
@@ -806,7 +814,7 @@ Tiv.VerticalAlignment = 'middle';
 Tiv.String = YLabels{bbiv};
 
 % PLOT B: -----------------------------------------------------------------
-ix_show = find(X.N_Rad > 5);
+ix_show = find(X.N_Rad > 3);
 ax_b = axes('position',[.09,.07,.42,.26]);
 hold on; box on; set(gca,'linewidth',1);
 p1=plot(X.Avg_Rad(ix_show,1), X.Avg_Rad(ix_show,3), 'd','markersize',5,'markeredgecolor','none','markerfacecolor','k');
@@ -824,7 +832,10 @@ xticks([5:5:30]);
 yticks([1,3,10,30,100]);
 
 % PLOT C: -----------------------------------------------------------------
-test_statistic = X.Avg_Rad(ix_show,4).^2./X.Avg_Rad(ix_show,3);
+var_by_mean = X.Avg_Rad(ix_show,4).^2./X.Avg_Rad(ix_show,3);
+% test_statistic = (X.Avg_Rad(ix_show,4).^2 - X.Avg_Rad(ix_show,3))./X.Avg_Rad(ix_show,3);
+COV = X.Avg_Rad(ix_show,4)./X.Avg_Rad(ix_show,3);
+test_statistic = var_by_mean;
 ix_outside = find(test_statistic < 0.5 | test_statistic > 2);
 ix_inside = find(test_statistic >= 0.5 & test_statistic <= 2);
 ax = axes('position',[.59,.07,.39,.26]);
@@ -833,10 +844,10 @@ hold on; box on; set(gca,'linewidth',1);
 % plot(X.Avg_Rad(ix_show,3), X.Avg_Rad(ix_show,4),'o','markersize',3,'markerfacecolor','k','markeredgecolor','none');
 plot([0,50],[.5,.5], 'k--','linewidth',1);
 plot([0,50],[2,2], 'k--','linewidth',1);
-plot(X.Avg_Rad(ix_show(ix_inside), 1), test_statistic(ix_show(ix_inside)), 'o','markersize',3,'markeredgecolor','k','linewidth',1);
-plot(X.Avg_Rad(ix_show(ix_outside), 1), test_statistic(ix_show(ix_outside)), 'x','markersize',4,'markeredgecolor','r','linewidth',1);
-xlim([0,30]);
-ylim([0,7]);
+plot(X.Avg_Rad(ix_show(ix_inside), 1), test_statistic(ix_inside), 'o','markersize',3,'markeredgecolor','k','linewidth',1);
+plot(X.Avg_Rad(ix_show(ix_outside), 1), test_statistic(ix_outside), 'x','markersize',4,'markeredgecolor','r','linewidth',1);
+xlim([3,30]);
+ylim([0,10]);
 xlabel('Radius [\mum]');
 ylabel('\sigma^2/\langle P\rangle');
 set(gca,'fontsize',7);
@@ -852,11 +863,12 @@ annotation('textbox',[.61,.25,.03,.10],'string','c','fontsize',9,'fontweight','b
 % Print figure:
 if PRINT_FIGURES    
     print([printfolder,'Figure_03'],'-dpng',res);
+    exportgraphics(gcf,'Figure_03.pdf');
     close(gcf);
 end
 
 %% Figure 4:
-% Mean encounters per capita decrease, but consistency in encounter per
+% Mean encounters per capita decrease, but consistency in encounters per
 % capita increases.
 
 % Load data:
@@ -868,13 +880,21 @@ FilterSize      = [4,Inf];
 MicroBeadDiam   = 1;
 X = LOAD_DATA_BIN_CALIBRATE([fig_folder, 'A_090mins_001_EDF.nd2_TD_c_Probabilities.mat'], FilterFLPerArea, FilterSize, MicroBeadDiam); 
 Y = load([reg_folder, 'DATA_Figure_04_inset.mat']);
-Y.c_est
+Y.c_est;
 
 % Use V vs. N regression to estimate the number of cells per aggregate in
 % microbead data:
 Y.c_est(2) = 0;
 AggVolume = 4/3*pi*X.AggregateRadiusFilt.^3;
 AggNcells = polyval(Y.c_est, AggVolume);
+
+% Revision addition: Estimate the number of cells just in the peripheral
+% shell of the group:
+DeltaR = [1, 3, 6, 10]; % micron
+RadiusCore = X.AggregateRadiusFilt - DeltaR;
+ShellVolume = 4/3*pi * (X.AggregateRadiusFilt.^3 - RadiusCore.^3);
+ShellNcells = polyval(Y.c_est, ShellVolume);
+DR_Ill = imread(['G:\My Drive\04_Manuscripts\02_ProjectEncounter\2025_Feb\Imgs\','DeltaR_Ill_lumpy.png']);
 
 % Accounting for error in the slope:
 m_std_error = 0.021574;
@@ -886,26 +906,33 @@ N_error = AggNcells_max - AggNcells;
 
 % Measure particles per capita:
 PPerCapita = X.NumParticlesFilt./AggNcells;
+PPerCapita_Shell = X.NumParticlesFilt./ShellNcells;
 
 % Binning by aggregate size, get average and std particles per capita:
 PPerCapita_Rad = zeros(length(X.Group_Rad),4);
+PPerCapita_Shell_Rad = zeros(length(X.Group_Rad), 4, length(DeltaR));
 for bb = 1:length(X.Group_Rad)
     x = X.Group_Rad{bb}(:,1);
     n = polyval(Y.c_est, 4/3*pi*x.^3);
     p = X.Group_Rad{bb}(:,2);
+    for rr = 1:length(DeltaR)
+        xc = x - DeltaR(rr);
+        if xc > 0 % the shell width is smaller than the radius of the group
+            ns = polyval(Y.c_est, 4/3*pi*(x.^3 - xc.^3));
+        else % the shell width is the same size or larger than the group radius
+            ns = nan; % we just won't plot the thing when dr > r
+        end
+        ps = p./ns; % estimate number of particles per capita, shell only
+        PPerCapita_Shell_Rad(bb,:,rr) = [mean(x), std(x), mean(ps), std(ps)];
+    end
     p = p./n; % estimated number of particles per capita
     PPerCapita_Rad(bb,:) = [mean(x), std(x), mean(p), std(p)];
 end
-
-% Binning by number of particles, get average and standard deviation of
-% number of particles per capita:
-PPerCapita_Particles = zeros(length(X.Group_Particles),4);
-for bb = 1:length(X.Group_Particles)
-    x = X.Group_Particles{bb}(:,1);
-    n = polyval(Y.c_est, 4/3*pi*x.^3);
-    p = X.Group_Particles{bb}(:,2)./n;
-    PPerCapita_Particles(bb,:) = [mean(x), std(x), mean(p), std(p)];
+ix = find(PPerCapita_Shell_Rad(:,1,1) >= 4);
+for rr = 1:length(DeltaR)
+    ppcrs(:,:,rr) = PPerCapita_Shell_Rad(ix, :, rr);
 end
+PPerCapita_Rad = PPerCapita_Rad(PPerCapita_Rad(:,1) >= 4, :);
 
 % Estimating particles per capita in the regression:
 Reg_AggVol = 4/3*pi*X.X_Rad(:,2).^3;
@@ -921,62 +948,58 @@ MinRad = min(X.AggregateRadiusFilt);
 MaxRad = max(X.AggregateRadiusFilt);
 
 skip = 2;
-ax_a = axes('position',[.10,.52,.88,.45]);
+ax_a = axes('position',[.10,.48,.88,.49]);
 hold on; box on; set(gca,'linewidth',1);
 plot(X.AggregateRadiusFilt, PPerCapita,'o','markersize',2,'markerfacecolor',[.65,.65,.65],'markeredgecolor','none');
 % plot(PPerCapita_Rad(:,1), PPerCapita_Rad(:,3), 'd','markersize',5,'markerfacecolor','k','markeredgecolor','none');
 errorbar(PPerCapita_Rad(1:skip:end,1), PPerCapita_Rad(1:skip:end,3), PPerCapita_Rad(1:skip:end,4), PPerCapita_Rad(1:skip:end,4), PPerCapita_Rad(1:skip:end,2), PPerCapita_Rad(1:skip:end,2),...
     'kd','markersize',5,'markerfacecolor','k','markeredgecolor','none','linewidth',1,'capsize',4);
 plot([MinRad, MaxRad],[0,0],'k:','linewidth',1);
-% xlim([MinRad-1,MaxRad]);
 xlim([MinRad-1, 40]);
-% ylim([2e-4,5e-2]);
 ylim([-1e-3, 1e-2]);
 
 % Labels:
 xlabel('Radius [um]');
-ylabel('Particles per cell');
+ylabel('Microbeads per cell');
+set(gca,'xscale','linear');
 set(gca,'yscale','linear');
 set(gca,'fontsize',7);
 set(gca,'layer','top');
 
-% Inset, linear scale:
-%{
-skip = 2;
-ax_ai = axes('position',[.62,.68,.34,.25]);
+% Inset, what if we are just talking about feeding the shell:
+skip = 1;
+Colormap_a = flipud([254,217,142; 254,153,41; 217,95,14; 153,52,4]/255);
+ax_inset = axes('position',[.55,.68,.40,.25]);
 hold on; box on; set(gca,'linewidth',1);
-plot([0,max(X.AggregateRadiusFilt)],[0,0],'k-','linewidth',1);
-plot(X.AggregateRadiusFilt, PPerCapita, 'o','markersize',2,'markerfacecolor',[.65,.65,.65],'markeredgecolor','none');
-errorbar(PPerCapita_Rad(1:skip:end,1), PPerCapita_Rad(1:skip:end,3), PPerCapita_Rad(1:skip:end,4), PPerCapita_Rad(1:skip:end,4), PPerCapita_Rad(1:skip:end,2), PPerCapita_Rad(1:skip:end,2),...
-    'kd','markersize',5,'markerfacecolor','k','markeredgecolor','none','linewidth',1,'capsize',4);
-xlabel('R [\mum]');
+plot([1,40],[0,0],'k:','linewidth',1);
+shadedErrorBar(PPerCapita_Rad(1:skip:end,1), PPerCapita_Rad(1:skip:end,3), PPerCapita_Rad(1:skip:end,4),...
+        'lineProps',{'-o','markerfacecolor','none','markeredgecolor','none','linewidth',1,'color','k'});
+shadedErrorBar(PPerCapita_Shell_Rad(1:skip:end,1,1), PPerCapita_Shell_Rad(1:skip:end,3,1), PPerCapita_Shell_Rad(1:skip:end,4,1),...
+        'lineProps',{'-o','markerfacecolor','none','markeredgecolor','none','linewidth',1,'color',[232, 89, 12]/255});
+set(gca,'xscale','log');
+set(gca,'yscale','linear');
+xlabel('Radius [\mum]');
 ylabel('P/N');
+xlim([MinRad, 35]);
+ylim([-1e-3, 2e-2])
 set(gca,'fontsize',7);
 set(gca,'layer','top');
-xlim([MinRad-1,40]);
-ylim([-.002,.010]);
-set(gca,'ticklength',[.02,.02]);
-%}
 
-% %% Inset, packing fraction measurements:
-% % figure('units','centimeters','position',[3,3,8,8]);
-% ax_ai = axes('position',[.60,.75,.35,.20]);
-% hold on; box on; set(gca,'linewidth',1);
-% plot(GroupV, GroupN, 'k.','markersize',18);
-% plot(GroupVReg, GroupNReg, 'k-','linewidth',1);
-% xlabel('V [\mum^3]');
-% ylabel('N');
-% set(gca,'fontsize',7);
-% set(gca,'layer','top');
+ax_legend = axes('position',[.33,.73,.13,.25]);
+imshow(DR_Ill);
+annotation("textbox",[.56,.80,.10,.05],'string','1\mum','edgecolor','none','fontsize',7,'color',[232, 89, 12]/255);
+annotation("textbox",[.56,.69,.10,.05],'string','Full','edgecolor','none','fontsize',7,'color','k');
 
 % PLOT B: -----------------------------------------------------------------
+skip = 1;
 XFit = linspace(min(PPerCapita_Rad(:,1)), max(PPerCapita_Rad(:,1)), 20);
-ax_b = axes('position',[.10,.09,.39,.33]);
+ax_b = axes('position',[.10,.08,.39,.32]);
 hold on; box on; set(gca,'linewidth',1);
+
 yyaxis left;
 p1=plot(PPerCapita_Rad(:,1), PPerCapita_Rad(:,3),'d','markersize',5,'markerfacecolor','k','markeredgecolor','none');
 ylabel('Mean Beads/Capita');
-ylim([3e-4,8e-3]);
+ylim([3e-4,2e-2]);
 set(gca,'xscale','log');
 set(gca,'yscale','log');
 
@@ -985,8 +1008,10 @@ p2=plot(PPerCapita_Rad(:,1), (PPerCapita_Rad(:,4)).^(-1), 's','markersize',5,'ma
 ylim([1e2,1e4]);
 set(gca,'yscale','log');
 xlim([MinRad,MaxRad]);
+yticklabels({});
+
 T = annotation('textbox','string','Consistency (1/\sigma)');
-T.Position = [.20,.37,.50,.04];
+T.Position = [.15,.35,.50,.04];
 T.FontSize = 7;
 T.Color = [.2,.4,.8];
 T.EdgeColor = 'none';
@@ -1002,33 +1027,101 @@ ax_b.YAxis(1).Color = [0,0,0];
 ax_b.YAxis(2).Color = [.2,.4,.8];
 
 % PLOT C: -----------------------------------------------------------------
+%{
+skip = 1;
+XFit = linspace(min(PPerCapita_Rad(:,1)), max(PPerCapita_Rad(:,1)), 20);
+ax_c = axes('position',[.55,.39,.39,.22]);
+hold on; box on; set(gca,'linewidth',1);
+yyaxis left;
+for rr = 1:length(DeltaR)
+    % labels(rr) = scatter(PPerCapita_Shell_Rad(1:skip:end,1,rr), PPerCapita_Shell_Rad(1:skip:end,3,rr), 25, Colormap_a(rr,:), 'd');
+    plot(PPerCapita_Shell_Rad(1:skip:end,1,rr), PPerCapita_Shell_Rad(1:skip:end,3,rr), '-','linewidth',1.5,'color',Colormap_a(rr,:));
+end
+plot(PPerCapita_Rad(:,1), PPerCapita_Rad(:,3),'k-','linewidth',1);
+ylim([3e-4,2e-2]);
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+yticklabels({});
+
+yyaxis right;
+for rr = 1:length(DeltaR)
+    % labels(rr) = scatter(PPerCapita_Shell_Rad(1:skip:end,1,rr), PPerCapita_Shell_Rad(1:skip:end,4,rr).^(-1), 25, Colormap_a(rr,:), 's');
+    plot(PPerCapita_Shell_Rad(1:skip:end,1,rr), PPerCapita_Shell_Rad(1:skip:end,4,rr).^(-1), '-.','linewidth',1.5,'color',Colormap_a(rr,:))
+end
+plot(PPerCapita_Rad(:,1), PPerCapita_Rad(:,4).^(-1),'k-.','linewidth',1);
+ylim([1e2,1e4]);
+set(gca,'yscale','log');
+xlim([MinRad,MaxRad]);
+
+% Labels
+xlabel('Radius [\mum]');
+set(gca,'fontsize',7);
+set(gca,'ticklength',[.03,.03]);
+set(gca,'layer','top');
+
+% Set axes colors:
+ax_c.YAxis(1).Color = [0,0,0];
+ax_c.YAxis(2).Color = [0,0,0];
+%}
+
+% PLOT D: -----------------------------------------------------------------
 B_sweep = 1:.2:4;
 B_colors = parula(length(B_sweep));
-ax_c = axes('position',[.60,.09,.38,.33]);
+MarkerStyle = {'o','d','s','pentagram'};
+ax_c = axes('position',[.57,.08,.39,.32]);
+% ax_d = axes('position',[.10,.06,.88,.27]);
 hold on; box on; set(gca,'linewidth',1);
-plot(PPerCapita_Rad(1:end-1,3), (PPerCapita_Rad(1:end-1,4)).^(-1),'kx','linewidth',1,'markersize',6);
+% for rr = 1:length(DeltaR)
+%     scatter(PPerCapita_Shell_Rad(1:skip:end,3,rr), PPerCapita_Shell_Rad(1:skip:end,4,rr).^(-1), 25,Colormap_a(rr,:),MarkerStyle{rr});
+% end
+plot(PPerCapita_Rad(1:end,3), (PPerCapita_Rad(1:end,4)).^(-1),'kx','linewidth',1,'markersize',6);
 MaxY = 8000;
-plot([7e-4, max(PPerCapita_Rad(:,3))], [MaxY, 0], 'k--','linewidth',1);
+% plot([7e-4, max(PPerCapita_Rad(:,3))], [MaxY, 0], 'k--','linewidth',1);
 xlabel('Mean Beads/Capita');
 ylabel('Consistency (1/\sigma)');
 set(gca,'fontsize',7);
 set(gca,'layer','top');
 set(gca,'xscale','linear');
 set(gca,'yscale','linear');
-% ylim([0,1e4]);
-% xlim([0,4e-3]);
+xlim([0,5e-3]);
+ylim([0,1e4]);
 yticks([]);
 xticks([]);
 
+% Inset:
+%{
+ax_di = axes('position',[.50,.15,.40,.15]);
+hold on; box on; set(gca,'linewidth',1);
+for rr = 1:length(DeltaR)
+    scatter(PPerCapita_Shell_Rad(1:skip:end,3,rr), PPerCapita_Shell_Rad(1:skip:end,4,rr).^(-1), 25,Colormap_a(rr,:),MarkerStyle{rr});
+end
+plot(PPerCapita_Rad(1:end,3), (PPerCapita_Rad(1:end,4)).^(-1),'kx','linewidth',1,'markersize',6);
+xlabel('Mean Beads/Capita');
+ylabel('Consistency (1/\sigma)');
+set(gca,'fontsize',7);
+set(gca,'layer','top');
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+%}
+
 % -------------------------------------------------------------------------
+% Diagram on top illustrating the shell width:
+% DeltaR_Ill = imread([drive_folder,':\My Drive\04_Manuscripts\02_ProjectEncounter\2025_Feb\Imgs\','DeltaR_Ill.png']);
+% ax_ill = axes('position',[.25,.50,.15,.11]);
+% hold on; box on; set(gca,'linewidth',1);
+% imshow(DeltaR_Ill);
+% set(gca,'layer','top');
+
 % Panel Labels:
 annotation('textbox',[.01,.92,.03,.10],'string','a','fontsize',9,'fontweight','bold','horizontalalignment','center','verticalalignment','middle','edgecolor','none')
-annotation('textbox',[.12,.34,.03,.10],'string','b','fontsize',9,'fontweight','bold','horizontalalignment','center','verticalalignment','middle','edgecolor','none')
-annotation('textbox',[.62,.34,.03,.10],'string','c','fontsize',9,'fontweight','bold','horizontalalignment','center','verticalalignment','middle','edgecolor','none')
+annotation('textbox',[.12,.54,.03,.10],'string','b','fontsize',9,'fontweight','bold','horizontalalignment','center','verticalalignment','middle','edgecolor','none')
+annotation('textbox',[.57,.54,.03,.10],'string','c','fontsize',9,'fontweight','bold','horizontalalignment','center','verticalalignment','middle','edgecolor','none')
+annotation('textbox',[.13,.25,.03,.10],'string','d','fontsize',9,'fontweight','bold','horizontalalignment','center','verticalalignment','middle','edgecolor','none')
 
 % Print figure:
 if PRINT_FIGURES    
     print([printfolder,'Figure_04'],'-dpng',res);
+    exportgraphics(gcf,'Figure_04.pdf');
     close(gcf);
 end
 
@@ -1040,10 +1133,12 @@ end
 clearvars -except PRINT_FIGURES drive_folder printfolder res big_width lil_width med_width;
 fig_folder = [drive_folder,':\My Drive\04_Manuscripts\02_ProjectEncounter\2025_Feb\07_Sims\'];
 sims_ill = imread([fig_folder,'Sim_Ill_3.png']);
-X=load([fig_folder, 'g0_alpha_sims\', 'sims_FS_17-Jun-2025.mat']);
+% X=load([fig_folder, 'g0_alpha_sims\', 'sims_FS_17-Jun-2025.mat']);
+X = load([drive_folder,':\My Drive\02_Scripts\EncounterRates\States_Competition_Model\g0_alpha_sims\', 'sims_FS_23-Jan-2026.mat']);
 Z=load([fig_folder, 'swimming_speed_sims\', 'sims_02-Mar-2025.mat']);
-W3=load([fig_folder, 'g0_alpha_sims\', 'sims_MF_17-Jun-2025.mat'],'G_0','alpha',...
-    'n_frac','b_frac','FinalC_FS');
+% W3=load([fig_folder, 'g0_alpha_sims\', 'sims_MF_17-Jun-2025.mat'],'G_0','alpha',...
+    % 'n_frac','b_frac','FinalC_FS');
+W3 = load([drive_folder,':\My Drive\02_Scripts\EncounterRates\States_Competition_Model\g0_alpha_sims\', 'sims_MF_23-Jan-2026.mat']);
 M=load([fig_folder, 'growth_ratio_sims\', 'sims_11-Feb-2025.mat']);
 V=load([fig_folder, 'packing_frac_sims\','sims_03-Mar-2025.mat']);
 
@@ -1062,50 +1157,15 @@ ax_a = axes('position',[0,.70,1,.30]);
 imshow(sims_ill);
 
 % PLOT B ------------------------------------------------------------------
-% An example run, first number fraction:
-%{
-yrun = [];
-for mm = 1:size(Y.n_frac,3)
-    yrun = [yrun, Y.n_frac{4,6,mm}];
-end
-y_sim_n = mean(yrun,2);
-y_err_n = std(yrun,0,2);
-xrun = [];
-for mm = 1:size(X.n_frac,3)
-    xrun = [xrun, X.n_frac{4,6,mm}];
-end
-x_sim_n = mean(xrun,2);
-x_err_n = std(xrun,0,2);
-w_sim_n = W1.n_frac{1,1,1};
-
-% Then biomass:
-yrun = [];
-for mm = 1:size(Y.b_frac,3)
-    yrun = [yrun, Y.b_frac{4,6,mm}];
-end
-y_sim_b = mean(yrun,2);
-y_err_b = std(yrun,0,2);
-xrun = [];
-for mm = 1:size(X.b_frac,3)
-    xrun = [xrun, X.b_frac{4,6,mm}];
-end
-x_sim_b = mean(xrun,2);
-x_err_b = std(xrun,0,2);
-w_sim_b = W1.b_frac{1,1,1};
-%}
-
 % Show example runs, first n_frac...
 ax_bi = axes('position',[.11,.40,.22,.14]);
 hold on; box on; set(gca,'linewidth',1);
-% p1 = errorbar(0:100, y_sim_n, y_err_n,'-','linewidth',1,'color','k','capsize',6);
-p1 = plot(W3.n_frac{4,6,1},'-','linewidth',1,'color',[.6,.6,.6]);
-plot(W3.n_frac{4,6,2},'-','linewidth',1,'color',[.6,.6,.6]);
-plot(W3.n_frac{4,6,3},'-','linewidth',1,'color',[.6,.6,.6]);
-p2 = plot(X.n_frac{4,6,1},'-','linewidth',1,'color','k');
-plot(X.n_frac{4,6,2},'-','linewidth',1,'color','k');
-plot(X.n_frac{4,6,3},'-','linewidth',1,'color','k');
-% p2 = plot(0:length(w_sim_n)-1, w_sim_n, '-','linewidth',1,'color',[.6,.6,.6]);
-% p3 = errorbar(0:100, x_sim_n, x_err_n, '-','linewidth',1,'color','k','capsize',6);
+p1 = plot(W3.n_frac{4,9,1},'-','linewidth',1,'color',[.6,.6,.6]);
+% plot(W3.n_frac{4,6,2},'-','linewidth',1,'color',[.6,.6,.6]);
+% plot(W3.n_frac{4,6,3},'-','linewidth',1,'color',[.6,.6,.6]);
+p2 = plot(X.n_frac{4,9,1},'-','linewidth',1,'color','k');
+% plot(X.n_frac{4,9,2},'-','linewidth',1,'color','k');
+% plot(X.n_frac{4,9,3},'-','linewidth',1,'color','k');
 
 % Labels:
 xlabel('Time');
@@ -1129,15 +1189,12 @@ L1b = annotation('line',[.13,.15],[.487,.487],'linewidth',1,'color',[0,0,0]);
 % Then in b_frac...
 ax_bii = axes('position',[.11,.54,.22,.14]);
 hold on; box on; set(gca,'linewidth',1);
-p1 = plot(W3.b_frac{4,6,1},'-','linewidth',1,'color',[.6,.6,.6]);
-plot(W3.b_frac{4,6,2},'-','linewidth',1,'color',[.6,.6,.6]);
-plot(W3.b_frac{4,6,3},'-','linewidth',1,'color',[.6,.6,.6]);
-p2 = plot(X.b_frac{4,6,1},'-','linewidth',1,'color',[0,0,0]);
-plot(X.b_frac{4,6,2},'-','linewidth',1,'color',[0,0,0]);
-plot(X.b_frac{4,6,3},'-','linewidth',1,'color',[0,0,0]);
-% p1 = errorbar(0:100, y_sim_b, y_err_b,'-','linewidth',1,'color','k','capsize',6);
-% p3 = plot(0:length(w_sim_b)-1, w_sim_b, '-','linewidth',1,'color',[.6,.6,.6]);
-% p2 = errorbar(0:100, x_sim_b, x_err_b, '-','linewidth',1,'color','k','capsize',6);
+p1 = plot(W3.b_frac{4,9,1},'-','linewidth',1,'color',[.6,.6,.6]);
+% plot(W3.b_frac{4,6,2},'-','linewidth',1,'color',[.6,.6,.6]);
+% plot(W3.b_frac{4,6,3},'-','linewidth',1,'color',[.6,.6,.6]);
+p2 = plot(X.b_frac{4,9,1},'-','linewidth',1,'color',[0,0,0]);
+% plot(X.b_frac{4,9,2},'-','linewidth',1,'color',[0,0,0]);
+% plot(X.b_frac{4,9,3},'-','linewidth',1,'color',[0,0,0]);
 
 % Labels:
 yL = ylabel('Biomass');
@@ -1157,9 +1214,9 @@ ax_c = axes('position',[.45,.45,.27,.23]);
 hold on; box on; set(gca,'linewidth',1);
 imagesc(W3.alpha, 1:length(W3.G_0), mean(W3.FinalC_FS,3));
 colormap(ax_c, cmap);
-xlim([2,3]);
+xlim([2,4]);
 ylim([1,length(W3.G_0)]);
-xticks([2.25,2.5,2.75]);
+xticks([2.5,3,3.5]);
 yticks([1,6,11]);
 yticklabels({'3e3','3e4','3e5'});
 xlabel('\lambda');
@@ -1174,9 +1231,9 @@ ax_d = axes('position',[.72,.45,.27,.23]);
 hold on; box on; set(gca,'linewidth',1);
 imagesc(X.alpha, 1:length(X.G_0), mean(X.FinalC_FS,3));
 colormap(ax_d, cmap);
-xlim([2,3]);
+xlim([2,4]);
 ylim([1,length(X.G_0)]);
-xticks([2.25,2.5,2.75]);
+xticks([2.5,3,3.5]);
 yticks([1,6,11]);
 yticklabels({'','',''});
 xlabel('\lambda');
@@ -1202,17 +1259,17 @@ T2.Position = [.72,.64,.27,.04];
 T2.FontSize = 7;
 T2.EdgeColor = 'none';
 T3 = annotation('textbox','string','\DeltaB');
-T3.Position = [.37,.36,.15,.04];
+T3.Position = [.37,.355,.15,.04];
 T3.FontSize = 7;
 T3.EdgeColor = 'none';
 T3.FontAngle='italic';
 
 T4 = annotation('rectangle');
-T4.Position = [.57,.505,.03,.025];
-T4.Color = [.6,.6,.6];
+T4.Position = [.57,.505,.015,.025];
+T4.Color = 'k';
 T4.LineWidth = 2;
 T5 = annotation('rectangle');
-T5.Position = [.84,.505,.03,.025];
+T5.Position = [.84,.505,.015,.025];
 T5.Color = [0,0,0];
 T5.LineWidth = 2;
 
@@ -1295,16 +1352,427 @@ annotation('textbox',[.01,.24,.03,.10],'string','d','fontsize',9,'fontweight','b
 % Print figure:
 if PRINT_FIGURES    
     print([printfolder,'Figure_05'],'-dpng',res);
+    exportgraphics(gcf,'Figure_05.pdf');
+    close(gcf);
+end
+
+
+%% Figure 6: Including phage
+% LOAD DATA
+% First, load from same simulations as above ------------------------------
+% datafolder = 'E:\2025\01_ProjectEncounter\202511XX_SimsRevisions\Phage_Food_Sweeps_Sims\';
+datafolder = [drive_folder,':\My Drive\04_Manuscripts\02_ProjectEncounter\2025_Feb\07_Sims\'];
+X = load([datafolder,'sims_PHAGE_2026-01-26.mat']);
+G0_F = X.G0_F;
+G0_P = X.G0_P;
+BS = X.Phage_Burst_Size;
+
+% Calculate integrated biomass fraction:
+for ff = 1:length(G0_F)
+    for pp = 1:length(G0_P)
+        for bb = 1:length(BS)
+            for mm = 1:10
+                IntegratedBiomassFraction(ff,bb,pp,mm) = sum(X.b_frac{bb,pp,mm});
+            end
+        end
+    end
+end
+IBF = mean(IntegratedBiomassFraction,4);
+
+% Second, load data from Gillespie simulations ----------------------------
+gill_folder = [drive_folder,':\Shared drives\Schwartzman Lab\Data\tom\Sweeping_Size_BurstSize_PhageConc_EMP\'];
+names = dir(gill_folder);
+folder_names = names([names.isdir]);
+folder_names = folder_names(3:end);
+
+group_sizes     = [1e1,3e1,1e2,3e2,1e3,3e3,1e4];
+phage_conc      = [1e4,3e4,1e5,3e5,1e6,3e6,1e7];
+% burst_sizes     = [0,33,67,100,133,167,200];
+% burst_sizes     = [0,50,100,150,200];
+burst_sizes     = [0,100,200];
+Msims           = [1,1,1,3,10,30,100];
+
+% Calculate some important quantities:
+T_avg_2  = zeros(length(folder_names),1);
+T_err_2  = T_avg_2;
+T_calc_2 = T_avg_2;
+Infection_Array = cell(length(folder_names),1);
+Infection_Array_Ordered = Infection_Array;
+
+% Loop through all parameter combinations:
+for nn = 1:length(folder_names)
+    disp(folder_names(nn).name);
+    filelist = dir([gill_folder,folder_names(nn).name,'/*.mat']);
+    msims_this_size = length(filelist);
+
+    % Set up the measurement arrays:
+    T_inf  = zeros(length(filelist),1);
+    T_calc = T_inf;
+    T_err  = T_inf;
+
+    % Loop through the files in the folder:
+    for ff = 1:length(filelist)
+        disp(filelist(ff).name);
+        Z = load([gill_folder,folder_names(nn).name,'\',filelist(ff).name]);
+        
+        % Record time of infection for all members in the file:
+        ix_2 = find(Z.LOG(end).STATE == 2); % get all the MC states
+        BD = Z.LOG(end).BANK_DEATH;
+        Infection_Times = BD(ix_2);
+
+        % Order the infection times into an array:
+        Infection_Array_Ordered{nn} = [Infection_Array_Ordered{nn}; sort(Infection_Times)];
+
+        % Get the average infection time, and also append the whole list to
+        % an array:
+        T_inf(ff) = mean(Infection_Times);
+        if length(Infection_Times) > 1
+            T_err(ff) = std(Infection_Times);
+        end
+        Infection_Array{nn} = [Infection_Array{nn}; Infection_Times];
+
+        % Calculate the expected infection time:
+        R = computePhageAcquisitionRate(Z.initial_biomass, Z.phage_conc);
+        T_calc(ff) = 1./R;
+        
+    end
+
+    % Get averages from across the different sample runs:
+    T_avg_2(nn) = mean(T_inf,1);
+    T_err_2(nn) = mean(T_err,1);
+    T_calc_2(nn) = mean(T_calc);
+end
+
+% Reshape all arrays to match the parameter sweeps:
+name_list = cell(length(folder_names),1);
+for ii = 1:length(folder_names)
+    name_list{ii} = folder_names(ii).name;
+end
+name_list = reshape(name_list, length(phage_conc), length(burst_sizes), length(group_sizes));
+Infection_Array = reshape(Infection_Array, length(phage_conc), length(burst_sizes), length(group_sizes));
+Infection_Array_Ordered = reshape(Infection_Array_Ordered, length(phage_conc), length(burst_sizes), length(group_sizes));
+
+% Record an infection matrix:
+IM_bar = zeros(size(Infection_Array));
+IM_err = IM_bar;
+for nn = 1:length(group_sizes)
+    for bb = 1:length(burst_sizes)
+        for pp = 1:length(phage_conc)
+
+            % Remove infs from dataset:
+            % finite_data = Infection_Array{pp,bb,nn}(~isinf(Infection_Array{pp,bb,nn}) & ~isnan(Infection_Array{pp,bb,nn}));
+
+            % Make Infs the max simulation time before averaging:
+            data = Infection_Array{pp,bb,nn};
+            data(data == Inf) = Z.tmax;
+            finite_data = data;
+
+            % Average:
+            IM_bar(pp,bb,nn) = mean(finite_data);
+            IM_err(pp,bb,nn) = std(finite_data);
+        end
+    end
+end
+% avg_correction_factor = mean(IM_bar(:,4)./IM_bar(:,1));
+
+% -------------------------------------------------------------------------
+%% FIGURE
+figure('units','centimeters','position',[3,3,big_width,10]);
+
+% A & B: ------------------------------------------------------------------
+
+% Sweep burst size holding phage and food constant:
+rowa_x = [.10,.32,.54,.76];
+rowa_y = 0.78;
+rowa_w = 0.22;
+rowa_h = 0.20;
+% ff = 3;
+pp = 2;
+for bb = 1:length(BS)
+    ax = axes('position',[rowa_x(bb), rowa_y, rowa_w, rowa_h]);
+    hold on; box on; set(gca,'linewidth',1);
+    for mm = 1:10
+        plot(X.b_frac{bb,pp,mm},'-','color',[.8,.2,.2]);
+        plot(X.n_frac{bb,pp,mm},'-','color','k');
+    end
+    xlim([0,218]);
+    ylim([0,1]);
+    text(150,.90,['BS=',num2str(BS(bb))],'fontsize',6);
+    xticks([50,100,150,200]);
+    yticks([.25,.5,.75,1]);
+    if bb == 1
+        % ylabel('Biomass Fraction');
+        text(50,.75,'Biomass','color',[.8,.2,.2],'fontsize',7);
+        text(50,.10,'Number','color','k','fontsize',7);
+    else
+        yticklabels({'','','','',''});
+    end
+    set(gca,'fontsize',7);
+    set(gca,'ticklength',[.02,.02]);
+    xlabel('Time (# Rounds)');
+end
+
+% Sweep phage holding food and burst size constant:
+rowb_y = .58;
+rowb_w = .88/4;
+rowb_h = .20;
+rowb_x = rowb_w*(0:6) + 0.10;
+
+bb = 3;
+for pp = 1:4%length(G0_P)
+    ax = axes('position',[rowb_x(pp), rowb_y, rowb_w, rowb_h]);
+    hold on; box on; set(gca,'linewidth',1);
+    for mm = 1:10
+        plot(X.b_frac{bb,pp,mm},'-','color',[.8,.2,.2]);
+        plot(X.n_frac{bb,pp,mm},'k-');
+    end
+    xlim([0,218]);
+    ylim([0,1]);
+    xticks([50,100,150,200]);
+    yticks([.25,.5,.75,1]);
+    text(155,.9,['P=',num2str(G0_P(pp),'%1.0e')],'fontsize',6);
+    if pp == 1
+        % ylabel('Biomass Fraction');
+    else
+        yticklabels({'','','','',''});
+    end
+    set(gca,'fontsize',7);
+    set(gca,'ticklength',[.02,.02]);
+    xlabel('Time (# Rounds)');
+end
+
+% Panel C: ----------------------------------------------------------------
+%{
+% Left:
+axC1 = axes('position',[.07,.43,.17,.15]);
+hold on; box on; set(gca,'linewidth',1);
+imagesc(IBF(:,:,3));
+xlabel('Phage Conc.');
+ylabel('Food Conc.');
+xticks([]);
+yticks([]);
+xlim([.5,7.5]);
+ylim([.5,7.5]);
+clim([0,125]);
+set(gca,'layer','top');
+colormap(axC1,'pink');
+set(gca,'fontsize',7);
+
+% Right:
+axC2 = axes('position',[.28,.43,.17,.15]);
+hold on; box on; set(gca,'linewidth',1);
+imagesc(squeeze(IBF(3,:,:)));
+xticks([1,2,3,4]);
+xticklabels({'0','50','100','200'});
+yticks([]);
+xlabel('Burst Size');
+ylabel('Phage Conc.');
+xlim([.5,4.5]);
+ylim([.5,7.5]);
+clim([0,125]);
+cb = colorbar('eastoutside');
+set(gca,'layer','top');
+cb.Position = [.46,.43,.015,.15];
+cb.LineWidth = 1;
+colormap(axC2,'pink');
+set(gca,'fontsize',7);
+%}
+
+% PANEL C: Timescales -----------------------------------------------------
+%{
+axC = axes('position',[.05,.05,.43,.50]);
+hold on; box on; set(gca,'linewidth',1);
+set(gca,'fontsize',7);
+
+% Sweeping two variables:
+n_cells = logspace(0,4,100); % number of cells in a group
+n_p = logspace(4,7,50); % phage concentration
+radius_phage = 1e-5; % cm
+correction_factor = 1; %avg_correction_factor; %0.27; % this comes from the above analysis
+
+% Two models: Diffusion only, or turbulence only
+for nn = 1:length(n_cells)
+    for pp = 1:length(n_p)
+        Gamma_D(nn,pp) = computePhageAcquisitionRate(n_cells(nn), n_p(pp));
+        Gamma_T(nn,pp) = computeFoodAcquisitionRate(n_cells(nn), radius_phage, n_p(pp));
+    end
+end
+
+% Consider the timescale to get X cells from a single cell - is this possible?
+Colormap = [0,60,48; 
+            1,102,94;
+            53,151,143;
+            128,205,193;
+            199,234,229;
+            245,245,245;
+            246,232,195;
+            223,194,125;
+            191,129,45;
+            140,81,10;
+            84,48,5]/255;
+doubling_time = 30*60; % secs
+assembly_time = log2(n_cells) * doubling_time;
+Assembly_Time = repmat(assembly_time', [1,length(n_p)]);
+A = correction_factor*(1./Gamma_D);
+PossibilityMatrix = A./3600;%./Assembly_Time;
+
+hold on; box on; set(gca,'linewidth',1);
+imagesc(n_p, n_cells, PossibilityMatrix);
+colormap(axC, Colormap);
+% [C,h] = contour(n_p, n_cells, PossibilityMatrix,[0.1,1,10],'w-','linewidth',1.5,'ShowText',true,'LabelFormat','%1.1f DT');
+[C,h] = contour(n_p, n_cells, PossibilityMatrix,[20,60,180,600]/60,'w-','linewidth',1.5,'ShowText',true,'LabelFormat','%2.2f [hrs]');
+clabel(C,h,'fontsize',8,'color','w');
+text(2e4,3e0,'Can assemble','fontsize',8,'color','w');
+text(1.5e6, 2e3,{'Cannot','assemble'},'fontsize',8,'color','w');
+% clim([0,10]);
+clim([0,10]);
+xlim([1e4,1e7]);
+ylim([1,1e4]);
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+set(gca,'layer','top');
+set(gca,'fontsize',7);
+xlabel('Infect. Phage Conc [#/mL]');
+ylabel('Group Biomass [# Cells]');
+%}
+
+% Panel C, Timescales with turbulence: ------------------------------------
+axC = axes('position',[.05,.08,.24,.40]);
+hold on; box on; set(gca,'linewidth',1);
+set(gca,'fontsize',7);
+
+% Sweeping two variables:
+n_cells = logspace(0,4,100); % number of cells in a group
+n_p = logspace(4,7,50); % phage concentration
+radius_phage = 1e-5; % cm
+correction_factor = 1; %avg_correction_factor; %0.27; % this comes from the above analysis
+
+% Two models: Diffusion only, or turbulence only
+for nn = 1:length(n_cells)
+    for pp = 1:length(n_p)
+        Gamma_D(nn,pp) = computePhageAcquisitionRate(n_cells(nn), n_p(pp));
+        Gamma_T(nn,pp) = computeFoodAcquisitionRate(n_cells(nn), radius_phage, n_p(pp));
+    end
+end
+% Gamma_N = max(cat(3,Gamma_D, Gamma_T),[],3);
+Gamma_N = Gamma_T;
+
+% Consider the timescale to get X cells from a single cell - is this possible?
+Colormap = [0,60,48; 
+            1,102,94;
+            53,151,143;
+            128,205,193;
+            199,234,229;
+            245,245,245;
+            246,232,195;
+            223,194,125;
+            191,129,45;
+            140,81,10;
+            84,48,5]/255;
+doubling_time = 30*60; % secs
+assembly_time = (log2(n_cells) * doubling_time)/3600; % in hrs
+Assembly_Time = repmat(assembly_time', [1,length(n_p)]);
+A = correction_factor*(1./Gamma_N);
+PossibilityMatrix = A./3600;%./Assembly_Time;
+AssemblyMatrix = PossibilityMatrix./Assembly_Time;
+
+hold on; box on; set(gca,'linewidth',1);
+imagesc(n_p, n_cells, PossibilityMatrix);
+colormap(axC, Colormap);
+% [C,h] = contour(n_p, n_cells, PossibilityMatrix,[0.1,1,10],'w-','linewidth',1.5,'ShowText',true,'LabelFormat','%1.1f DT');
+[C,h] = contour(n_p, n_cells, PossibilityMatrix,[20,60,180,720,1440]/60,'w-','linewidth',1.5,'ShowText',true,'LabelFormat','%2.2f [hrs]');
+clabel(C,h,'fontsize',8,'color','w');
+% text(2e4,3e0,'Can assemble','fontsize',8,'color','w');
+% text(1.5e6, 2e3,{'Cannot','assemble'},'fontsize',8,'color','w');
+% clim([0,10]);
+clim([1,12]);
+xlim([1e4,1e7]);
+ylim([1,1e4]);
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+set(gca,'layer','top');
+set(gca,'fontsize',7);
+xlabel('Infect. Phage Conc [#/mL]');
+ylabel('Group Biomass [# Cells]');
+
+% % Inset: Assembly time 100 cells ----------
+% axCi = axes('position',[.32,.38,.15,.15]);
+% hold on; box on; set(gca,'linewidth',1);
+% imagesc(n_p, n_cells, PossibilityMatrix > 2.5);
+% colormap(axCi, Colormap);
+% % [C,h] = contour(n_p, n_cells, PossibilityMatrix,[0.1,1,10],'w-','linewidth',1.5,'ShowText',true,'LabelFormat','%1.1f DT');
+% % [C,h] = contour(n_p, n_cells, AssemblyMatrix,linspace(.01,30,100),'k-','linewidth',1.5);%,'ShowText',true,'LabelFormat','%2.2f');
+% % clabel(C,h,'fontsize',8,'color','w');
+% clim([0,6]);
+% xlim([1e4,1e7]);
+% ylim([1,1e4]);
+% set(gca,'xscale','log');
+% set(gca,'yscale','log');
+% set(gca,'layer','top');
+% set(gca,'fontsize',7);
+% % xlabel('Infect. Phage Conc [#/mL]');
+% % ylabel('Group Biomass [# Cells]');
+
+% PANEL D: Gillespie simulations ------------------------------------------
+rowd_h = .40;
+rowd_w = 0.21;
+% rowd_x = [.56,.77,.56,.77];
+% rowd_y = [.31,.31,.07,.07];
+rowd_y = [.078,.08,.08];
+rowd_x = [.35,.56,.77];
+
+Colors_BS = abyss(7);
+conc_list = [1,4,7];
+% burst_list = [1,3,5];
+burst_list = [1,2,3];
+for pp = 1:3%length(conc_list)
+    ax = axes('position',[rowd_x(pp), rowd_y(pp), rowd_w, rowd_h]);
+    hold on; box on; set(gca,'linewidth',1);
+    for bb = 1:length(burst_list)
+        % burst_sizes(burst_list(bb))
+        errorbar(group_sizes, squeeze(IM_bar(conc_list(pp),burst_list(bb),:)./3600), squeeze(IM_err(conc_list(pp),burst_list(bb),:)./3600), 'o-','linewidth',1,'color',Colors_BS(burst_list(bb),:));
+    end
+    set(gca,'xscale','log');
+    set(gca,'yscale','log');
+    xlim([5,1.7e4]);
+    set(gca,'fontsize',7);
+    xticks([1e1,1e2,1e3,1e4]);
+    xlabel('Group biomass [# Cells]');
+    ylim([.01,120]);
+    yticks([1e-1,1e0,1e1,1e2]);
+    if ismember(pp,[1])
+        ylabel('\Delta t [hrs]');
+    else
+        yticklabels({'','','',''});
+    end
+    set(gca,'ticklength',[.03,.03]);
+    set(gca,'layer','top');
+    text(1e3, 70, ['\phi=',num2str(phage_conc(conc_list(pp)), '%1.0e')],'fontsize',7)
+end
+legend({'BS=0','100','200'},'location','northwest')
+
+% Annotations:
+% Box1a = annotation('rectangle',[.10,.84,.88,.14],'color',[.2,.4,.8],'linewidth',2);
+% Box1b = annotation('rectangle',[.28,.495,.17,.02],'color',[.2,.4,.8],'linewidth',2);
+% Box2a = annotation('rectangle',[.10,.65,.88,.14],'color',[.7,.3,.7],'linewidth',2);
+% Box2b = annotation('rectangle',[.07,.475,.17,.02],'color',[.7,.3,.7],'linewidth',2);
+an = annotation('textbox', [.07,.71,.15,.05], 'String', 'S2 Fraction', 'FitBoxToText', 'on','fontsize',7,'edgecolor','none');
+an.Rotation = 90; % Rotates 90 degrees counter-clockwise
+annotation('textbox',[.01,.92,.03,.10],'string','a','fontsize',9,'fontweight','bold','horizontalalignment','center','verticalalignment','middle','edgecolor','none')
+annotation('textbox',[.01,.72,.03,.10],'string','b','fontsize',9,'fontweight','bold','horizontalalignment','center','verticalalignment','middle','edgecolor','none')
+annotation('textbox',[.00,.44,.03,.10],'string','c','fontsize',9,'fontweight','bold','horizontalalignment','center','verticalalignment','middle','edgecolor','none')
+annotation('textbox',[.30,.44,.03,.10],'string','d','fontsize',9,'fontweight','bold','horizontalalignment','center','verticalalignment','middle','edgecolor','none')
+
+% Print figure:
+if PRINT_FIGURES    
+    print([printfolder,'Figure_06'],'-dpng',res);
+    exportgraphics(gcf,'Figure_06.pdf');
     close(gcf);
 end
 
 
 
-
-
-
-
-
+%%
 % -------------------------------------------------------------------------
 % -------------------------------------------------------------------------
 % -------------------------------------------------------------------------
@@ -1328,6 +1796,127 @@ end
 % -------------------------------------------------------------------------
 % -------------------------------------------------------------------------
 % -------------------------------------------------------------------------
+
+%% Adding kernels together in quadrature rather than simple superposition:
+% Inspired by Saffman-Turner 1956.
+
+% 3D Encounter kernel (theory): -------------------------------------------
+kT    = 1.38e-23 * 300;          % thermal energy in [J]
+nu    = 1e-3;                    % water dynamic viscosity in [Pa*s]
+mu    = 1e-6;                    % water kinematic viscosity (nu/rho)
+DRhor = 25;                      % difference in density between bacteria and water [kg/m^3]
+g     = 10;                      % acceleration due to gravity [m/s^2]
+eps   = 1e-5;                    % ocean energy dissipation rate, [W/kg]
+rb    = logspace(-10,-3,1e3);    % bacteria agg radius in [m]
+rr    = logspace(-10,-3,1e3);    % resource patch radius in [m]
+Conv2UM = (1e6)^3;               % Conversion factor from cubic meters to cubic microns
+Conv2CM = (1e2)^3;               % Conversion factor from cubic meters to cubic centimeters (mL)
+
+% Make patch size matrix:
+[Rb, Rr] = meshgrid(rb, rr);
+
+% Diffusive Kernel:
+Db = kT./(6*pi*nu*Rb);
+Dr = kT./(6*pi*nu*Rr);
+G_D = 4*pi*(Db + Dr) .* (Rb + Rr);
+
+% Buoyancy Kernel:
+Ub = 2 * DRhor * g * Rb.^2 / (9*nu);
+Ur = 2 * DRhor * g * Rr.^2 / (9*nu);
+G_B = pi * (Rb + Rr).^2 .* abs(Ub-Ur);
+
+% Turbulence Kernel, chosen for a particular epsilon value, and for well below the Kolmogorov limit:
+G_T = 1.3 * (Rb + Rr).^3 .* sqrt(eps./mu);
+
+% Divide each kernel by (Rb+Rr).^2:
+G_D_vel = G_D./((Rb+Rr).^2);
+G_B_vel = G_B./((Rb+Rr).^2);
+G_T_vel = G_T./((Rb+Rr).^2);
+
+% Add in quadrature:
+G_N_vel = sqrt(G_D_vel.^2 + G_B_vel.^2 + G_T_vel.^2);
+
+% Re-multiply (Rb+Rr)^2
+G_N = (Rb+Rr).^2 .* G_N_vel;
+G_N_orig = G_D + G_B + G_T;
+
+% Diffusion:
+%{
+figure;
+hold on; box on; set(gca,'linewidth',1);
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+imagesc(1e6*rb, 1e6*rr, log10(G_D));
+colormap(turbo(25));
+
+% Diffusion vel:
+figure;
+hold on; box on; set(gca,'linewidth',1);
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+imagesc(1e6*rb, 1e6*rr, log10(G_D_vel));
+colormap(turbo(25));
+
+% Bouyancy:
+figure;
+hold on; box on; set(gca,'linewidth',1);
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+imagesc(1e6*rb, 1e6*rr, log10(G_B));
+colormap(turbo(25));
+
+% Bouyancy vel:
+figure;
+hold on; box on; set(gca,'linewidth',1);
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+imagesc(1e6*rb, 1e6*rr, log10(G_B_vel));
+colormap(turbo(25));
+
+% Turb:
+figure;
+hold on; box on; set(gca,'linewidth',1);
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+imagesc(1e6*rb, 1e6*rr, log10(G_T));
+colormap(turbo(25));
+
+% Turb vel:
+figure;
+hold on; box on; set(gca,'linewidth',1);
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+imagesc(1e6*rb, 1e6*rr, log10(G_T_vel));
+colormap(turbo(25));
+%}
+
+% Net:
+figure('units','centimeters','position',[3,3,10,8]);
+hold on; box on; set(gca,'linewidth',1);
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+imagesc(1e6*rb, 1e6*rr, log10(Conv2CM * G_N));
+colormap(turbo(25));
+colorbar;
+xlim([1e-1,1e3])
+ylim([1e-4,1e3]);
+xlabel('Microbe Size [\mum]');
+ylabel('Resource Size [\mum]');
+set(gca,'layer','top');
+clim([-11, 0]);
+set(gca,'fontsize',7);
+% figure;
+% hold on; box on; set(gca,'linewidth',1);
+% set(gca,'xscale','log');
+% set(gca,'yscale','log');
+% imagesc(1e6*rb, 1e6*rr, log10(G_N_orig));
+% colormap(turbo(25));
+
+% Print figure:
+if PRINT_FIGURES    
+    print([printfolder,'Supplemental_Quadrature'],'-dpng',res);
+    close(gcf);
+end
 
 %% Changing the densities of sinking objects
 % 3D Encounter kernel (theory): -------------------------------------------
@@ -1544,7 +2133,7 @@ for ii = 1:length(ix_track)
 end
 set(gca,'layer','top');
 xlabel('Time [min]');
-ylabel('No. Particles');
+ylabel('No. Microbeads');
 set(gca,'fontsize',7);
 xlim([0,250]);
 % ylim([0,30]);
@@ -1566,7 +2155,7 @@ for ii = 1:length(ix_track)
 end
 set(gca,'layer','top');
 xlabel('Time [min]');
-ylabel('No. Particles');
+ylabel('No. Microbeads');
 set(gca,'fontsize',7);
 xlim([0,250]);
 % ylim([0,30]);
@@ -1587,12 +2176,12 @@ ax = axes('position',[.05,.05,.40,.40]);
 hold on; box on; set(gca,'linewidth',1);
 yyaxis left;
 errorbar(SizeClass, fit_params(1,:), 2*err_params(1,:),'.-','linewidth',1,'markersize',8);
-ylabel('\Gamma');
+ylabel('\Gamma [mL/min]');
 ylim([0,6e-8]);
 yyaxis right;
 errorbar(SizeClass, fit_params(2,:), 2*err_params(2,:),'.-','linewidth',1,'markersize',8);
 plot(SizeClass, avg_beta*ones(size(SizeClass)), '--','linewidth',1);
-ylabel('\beta');
+ylabel('\beta [1/min]');
 ylim([0,0.07]);
 xlabel('Radius [\mum]');
 set(gca,'fontsize',7);
@@ -1675,8 +2264,8 @@ xlim([3,30]);
 set(gca,'fontsize',7);
 set(gca,'TickLength',[.02,.02]);
 set(gca,'layer','top');
-xlabel('Aggregate Radius [\mum]');
-ylabel('# Beads');
+xlabel('Group Radius [\mum]');
+ylabel('# Microbeads');
 
 % Print figure:
 if PRINT_FIGURES    
@@ -1735,17 +2324,17 @@ for tt = 1:length(chosen_dataset)
     % plot(X.X_ParticlesW(:,2), X.R_ParticlesW, '-','linewidth',2,'color',[.2,.7,.2]);
     
     % Show slope:
-    text(6, 50, ['\lambda = ',num2str(X.B_Particles(2),'%0.2f')],'fontsize',8);
+    text(6, 300, ['\lambda = ',num2str(X.B_Particles(2),'%0.2f'),' \pm ',num2str(2*X.m_std_error,'%0.2f')],'fontsize',8);
 
     % Aesthetics:
     xlim([5,50]);
-    ylim([5e-1,1e2]);
+    ylim([5e-1,5e2]);
     xticks([10,20,30,40]);
     yticks([1,3,10,30,100]);
     xticklabels({'10','20','30','40'});
     if tt == 1
         yticklabels({'1','3','10','30','100'});
-        ylabel('No. particles');
+        ylabel('No. microbeads');
     end
     set(gca,'ticklength',[.03,.03]);
     xlabel('Radius [\mum]');
@@ -1754,6 +2343,8 @@ for tt = 1:length(chosen_dataset)
     set(gca,'yscale','log');
     set(gca,'fontsize',7);
     title(['Time: ',num2str(Time(tt)),' min']);
+    disp(tt);
+    disp(['No. groups counted = ',num2str(length(X.AggregateRadiusFilt))]);
 
 end
 
@@ -1884,7 +2475,7 @@ for tt = 1:size(dataset,1)
 
     % Division parameters:
     DivideBy = [1,5,10];
-
+    disp([titles{tt}]);
     for cc = 1:size(dataset,2)
     
         % Load data, bin it, and do regressions:
@@ -1897,6 +2488,9 @@ for tt = 1:size(dataset,1)
             'o','markerfacecolor','none','markeredgecolor',Colors(cc,:),'color',Colors(cc,:),'linewidth',0.5,'markersize',4,'capsize',4);
         % scatter(Y.Avg_Particles(:,1), Y.Bins_Particles/DivideBy(cc), 6,'o','linewidth',0.5,'markeredgecolor',Colors(cc,:));
         
+        disp(['C = ',num2str(DivideBy(cc))]);
+        disp(['No. groups counted: ',num2str(length(Y.AggregateRadiusFilt))]);
+
         % Regression:
         % plot(Y.X_Particles(:,2), Y.R_Particles/DivideBy(cc), '-','linewidth',2,'color',Colors(cc,:));
         % plot(Y.X_Rad(:,2), Y.R_Rad, '-','linewidth',2,'color',[.2,.4,.8]);
@@ -1981,7 +2575,7 @@ for ss = 1:length(datalist_SS)
     xticklabels({'10','20','30','40'});
     if ss == 1
         yticklabels({'1','3','10','30','100'});
-        ylabel('No. particles');
+        ylabel('No. microbeads');
     end
     set(gca,'ticklength',[.03,.03]);
     xlabel('Radius [\mum]');
@@ -1989,7 +2583,8 @@ for ss = 1:length(datalist_SS)
     set(gca,'yscale','log');
     set(gca,'fontsize',7);
     title(['Shaking speed: ',num2str(SS(ss)),' rpm']);
-    text(6,70,['\lambda=',num2str(X.B_Particles(2))],'fontsize',7);
+    text(6,70,['\lambda=',num2str(X.B_Particles(2)),' \pm ',num2str(2*X.m_std_error,'%0.2f')],'fontsize',7);
+    disp(['No. groups counted: ',num2str(length(X.AggregateRadiusFilt))]);
 
 end
 
@@ -2011,8 +2606,8 @@ Colors = [0,0,0; .2,.4,.8; .8,.2,.2];
 titles = {'Rotation_Well','Rotation_Flask','Side2Side'};
 
 % Inputs:
-FilterFLPerArea = 5e4; % [au]
-MinSize         = 3;   % [um]
+FilterFLPerArea = 3e3; % [au]
+MinSize         = 3.5;   % [um]
 FilterSize      = [MinSize, Inf];
 MicroBeadDiam   = 1;   % [um]
 FIGSAVE         = 0;
@@ -2048,12 +2643,12 @@ for ii = 1:size(datalist)
     xticklabels({'5','10','20','40'});
     ylim([5e-1,2e2]);
     xlabel('Radius [\mum]');
-    ylabel('No. Particles');
+    ylabel('No. microbeads');
     set(gca,'xscale','log');
     set(gca,'yscale','log');
     set(gca,'fontsize',7);
     title(titles{ii},'interpreter','none');
-    legend({['\alpha = ',num2str(Y.B_Particles(2),3)]},'location','northwest'); legend('boxoff');
+    legend({['\lambda = ',num2str(Y.B_Particles(2),'%0.2f'),' \pm ',num2str(2*Y.m_std_error,'%0.2f')]},'location','northwest'); legend('boxoff');
 
     % Label y-ticks for the first one:
     if ii == 1
@@ -2063,7 +2658,7 @@ for ii = 1:size(datalist)
 
     % More aesthetics:
     set(gca,'ticklength',[.02,.02]);
-
+    disp(['No. groups counted: ',num2str(length(Y.AggregateRadiusFilt))]);
 end
 
 % Print figure:
@@ -2072,59 +2667,151 @@ if PRINT_FIGURES
     close(gcf);
 end
 
-%% Supplemental effort, randomly sample a poisson distribution in silico and measure its variance:
-%{
-% Inputs:
-clearvars -except PRINT_FIGURES drive_folder printfolder res;
-FilterFLPerArea = 5e3;
-FilterSize      = [4,Inf];
-MicroBeadDiam   = 1;
-fig_folder = [drive_folder,':\My Drive\04_Manuscripts\02_ProjectEncounter\2025_Feb\02_Timelapse\A\'];
-X = LOAD_DATA_BIN_CALIBRATE([fig_folder, 'A_120mins_001_EDF.nd2_TD_c_Probabilities.mat'], ...
-    FilterFLPerArea, FilterSize, MicroBeadDiam);
+%% AMINE BEADS experiments
+% Load data:
+datafolder = 'F:\2025\01_ProjectEncounter\20251203_Revisions_Experiments\EDFs\MATs\combo_all\';
+datalist = dir([datafolder, '*comb.mat']);
 
-% Randomly sampling a Poisson distribution:
-M = [2:10];
-lambda = 10;
-Nsamples = 500;
-F_pass_pred = zeros(length(M),1);
-for mm = 1:length(M)
-    Y = poissrnd(lambda, [M(mm),Nsamples]);
-    Variances = zeros(1,size(Y,2));
-    Means = Variances;
-    Stats = Variances;
-    for ii = 1:size(Y,2)
-        Means(ii) = mean(Y(:,ii));
-        Variances(ii) = var(Y(:,ii));
-        Stats(ii) = Variances(ii)./Means(ii);
+FL_per_area = 5e3;
+FilterSize = [3.5,50];
+FilterNoParts = [0, Inf];
+FilterCirc = [0.30,1];
+
+% Organize the data:
+TimePts = [30,60,90,150]'; % mins
+AmineIX = [2,4,6,8];
+CarbIX = [1,3,5,7];
+
+% Amine separate:
+figure('units','centimeters','position',[3,3,big_width,14]);
+
+% Panel A: Amine beads ----------------------------------------------------
+rowa_w = .23;
+rowa_h = 0.25;
+rowa_x = linspace(0,.92,5) + 0.07;
+rowa_y = 0.72;
+for tt = 1:length(TimePts)
+
+    ax = axes('position',[rowa_x(tt), rowa_y, rowa_w, rowa_h]);
+    amine_ixs = AmineIX(tt);
+
+    % Load the data for the current amine index
+    disp(datalist(amine_ixs).name);
+    X = LOAD_DATA_BIN_CALIBRATE_Revisions_2([datafolder, datalist(amine_ixs).name], FL_per_area, FilterSize, FilterNoParts, FilterCirc, 1);
+
+    % Plot:
+    hold on; box on; set(gca,'linewidth',1);
+    plot(X.AggregateRadiusFilt, X.NumParticlesFilt, 'o', 'markersize', 4,'color',[.8,.4,.08]);
+    errorbar(X.Avg_Particles(:,1), X.Bins_Particles, 0.6*ones(length(X.Avg_Particles),1), 0.6*ones(length(X.Avg_Particles),1), X.Avg_Particles(:,2), X.Avg_Particles(:,2), 'kd','markersize',4,'markerfacecolor','k','linewidth',1);
+    plot(X.X_Particles(:,2), X.R_Particles, '-','linewidth',1,'color',[.8,.2,.2]);    
+    
+    xlabel('Radius [\mum]');
+    yticks([1,10,100]);
+    if tt == 1
+        ylabel('No. Particles');
+    else
+        yticklabels({'','',''});
     end
-    ix_pass = find(Stats > 0.5 & Stats < 2);
-    F_pass_pred(mm) = length(ix_pass)/Nsamples;
+    set(gca,'xscale','log');    
+    set(gca,'yscale','log');
+    xlim([3,30]);
+    ylim([.5,200]);
+    title([num2str(X.B_Particles(2),3),' \pm ',num2str(2*X.B_Particles(3),3)])
+    set(gca,'fontsize',7);
+    set(gca,'ticklength',[.03,.03]);
 end
 
-% Sampling my distribution with different allowed numbers of aggregates in
-% the bins:
-% Calculate the agreement statistic:
-ix_show_min = [10,20];
-F_pass_data = zeros(length(ix_show_min),1);
-for mm = 1:length(ix_show_min)
-    % ix = find(X.N_Rad >= ix_show_min(mm));
-    ix = find(X.N_Rad > 1 & X.N_Rad <= ix_show_min(mm));
+% Panel B - Carboxyl separate: --------------------------------------------
+rowb_w = .23;
+rowb_h = 0.25;
+rowb_x = linspace(0,.92,5) + 0.07;
+rowb_y = 0.39;
+for tt = 1:length(TimePts)
+    axB = axes('position',[rowb_x(tt), rowb_y, rowb_w, rowb_h]);
+    carb_ixs = CarbIX(tt);
 
-    Stat = (X.Avg_Rad(ix,4).^2)./X.Avg_Rad(ix,3);
-    ix_pass = find(Stat > 0.5 & Stat < 2);
-    ix_fail = find(Stat > 2);
-    F_pass_data(mm) = length(ix_pass)./length([ix_fail; ix_pass]);
+    % Load the data for the current carboxyl index
+    disp(datalist(carb_ixs).name);
+    X = LOAD_DATA_BIN_CALIBRATE_Revisions_2([datafolder, datalist(carb_ixs).name], FL_per_area, FilterSize, FilterNoParts, FilterCirc, 1);
+
+    % Plot:
+    hold on; box on; set(gca,'linewidth',1);
+    plot(X.AggregateRadiusFilt, X.NumParticlesFilt, 'o', 'markersize', 4,'color',[.2,.4,.8]);
+    errorbar(X.Avg_Particles(:,1), X.Bins_Particles, 0.6*ones(length(X.Avg_Particles),1), 0.6*ones(length(X.Avg_Particles),1), X.Avg_Particles(:,2), X.Avg_Particles(:,2), 'kd','markersize',4,'markerfacecolor','k','linewidth',1);
+    plot(X.X_Particles(:,2), X.R_Particles, '-','linewidth',1,'color',[.8,.2,.2]);    
+    
+    xlabel('Radius [\mum]');
+    yticks([1,10,100]);
+    if tt == 1
+        ylabel('No. Particles');
+    else
+        yticklabels({'','',''});
+    end
+    set(gca,'xscale','log');    
+    set(gca,'yscale','log');
+    xlim([3,30]);
+    ylim([.5,200]);
+    title([num2str(X.B_Particles(2),3),' \pm ',num2str(2*X.B_Particles(3),3)])
+    set(gca,'fontsize',7);
+    set(gca,'ticklength',[.03,.03]);
 end
 
-% Show the relationship:
-figure; hold on; box on; set(gca,'linewidth',1);
-plot(M, F_pass_pred, 'k-','linewidth',1);
-plot(ix_show_min, F_pass_data, 'rx','linewidth',1);
-xlabel('Sample Size');
-ylabel('Passing fraction');
-% close all;
-%}
+% Panel C -----------------------------------------------------------------
+% Put them on the same plot:
+% Scale by relative concentration:
+% RelativeConcentrationRatio = 1;
+RelativeConcentrationRatio = 0.92;
+% RelativeConcentrationRatio = 0.85;
+rowc_w = .23;
+rowc_h = 0.25;
+rowc_x = linspace(0,.92,5) + 0.07;
+rowc_y = 0.07;
+for tt = 1:length(TimePts)
+    amine_ixs = AmineIX(tt);
+    carb_ixs = CarbIX(tt);
+
+    % Load the data for the current amine index
+    disp(datalist(carb_ixs).name);
+    X = LOAD_DATA_BIN_CALIBRATE_Revisions_2([datafolder, datalist(carb_ixs).name], FL_per_area, FilterSize, FilterNoParts, FilterCirc, 1);
+    Y = LOAD_DATA_BIN_CALIBRATE_Revisions_2([datafolder, datalist(amine_ixs).name], FL_per_area, FilterSize, FilterNoParts, FilterCirc, 1);
+
+    % Plot:
+    axC = axes('position',[rowc_x(tt), rowc_y, rowc_w, rowc_h]);
+    hold on; box on; set(gca,'linewidth',1);
+    % plot(X.AggregateRadiusFilt, X.NumParticlesFilt, 'o', 'markersize', 4,'color',[.2,.4,.8]);
+    pC=errorbar(X.Avg_Particles(:,1), X.Bins_Particles, 0.6*ones(length(X.Avg_Particles),1), 0.6*ones(length(X.Avg_Particles),1), X.Avg_Particles(:,2), X.Avg_Particles(:,2), 'd','markersize',4,'markerfacecolor',[.2,.4,.8],'linewidth',1,'markeredgecolor','k','color',[.2,.4,.8]);
+    plot(X.X_Particles(:,2), X.R_Particles, '-','linewidth',1.5,'color','k');
+    pA=errorbar(Y.Avg_Particles(:,1), Y.Bins_Particles./RelativeConcentrationRatio, 0.6*ones(length(Y.Avg_Particles),1), 0.6*ones(length(Y.Avg_Particles),1), Y.Avg_Particles(:,2), Y.Avg_Particles(:,2), 's','markersize',4,'markerfacecolor',[.8,.4,.1],'linewidth',1,'markeredgecolor','k','color',[.8,.4,.1]);
+    plot(Y.X_Particles(:,2), Y.R_Particles./RelativeConcentrationRatio, '-','linewidth',1.5,'color','k'); 
+    
+
+    xlabel('Radius [\mum]');
+    yticks([1,10,100]);
+    if tt == 1
+        ylabel('No. Particles');
+    else
+        yticklabels({'','',''});
+    end
+    set(gca,'xscale','log');    
+    set(gca,'yscale','log');
+    xlim([3,30]);
+    ylim([.5,200]);
+    legend_label_C = ['Carb. m = ',num2str(X.B_Particles(2),2),' \pm ',num2str(2*X.B_Particles(3),2)];
+    legend_label_A = ['Amine m = ',num2str(Y.B_Particles(2),2),' \pm ',num2str(2*Y.B_Particles(3),2)];
+    legend([pC,pA],{legend_label_C, legend_label_A},'location','northwest','fontsize',5);
+    legend('boxoff');
+    % title([num2str(X.B_Particles(2),3),' \pm ',num2str(2*X.B_Particles(3),3)])
+    set(gca,'fontsize',7);
+    set(gca,'ticklength',[.03,.03]);
+end
+
+% Print figure:
+if PRINT_FIGURES    
+    print([printfolder,'Supplemental_AmineBeads'],'-dpng',res);
+    close(gcf);
+end
+
+
 
 %% Poisson predictions, make a full panel of one example:
 % Show a histogram plot where each bin is shown separately:
@@ -2191,6 +2878,7 @@ for bb = 1:length(PCPoiss)
         xlim([0,50]);
         ylim([0,1.5*max(f(bb,:))])
         text(5, 1.3*max(f(bb,:)), ['R=',num2str(MeanR(bb),3),'\mum']);
+        text(25, 1.1*max(f(bb,:)), ['N=',num2str(chi2(bb,2)+1)],'fontsize',7)
     end
 end
 
@@ -2239,7 +2927,7 @@ xlim([0,30]);
 ylim([0,9]);
 xlabel('Radius [\mum]');
 ylabel('Var(P)/E(P)');
-legend([p1,p2,p3],{'60 mins','120','245'},'location','northwest');
+legend([p1,p2,p3],{['60min, N=',num2str(length(T1.AggregateRadiusFilt))],['120min, N=',num2str(length(T2.AggregateRadiusFilt))],['245min, N=',num2str(length(T3.AggregateRadiusFilt))]},'location','northwest');
 set(gca,'fontsize',7);
 xticks([5:5:30]);
 yticks(1:2:10);
@@ -2269,7 +2957,7 @@ p3=plot(T3.Avg_Rad(ix3, 1), t3s, '^','markersize',4,'markeredgecolor',[.7,.7,.7]
 xlim([0,30]);
 ylim([0,9]);
 xlabel('Radius [\mum]');
-legend([p1,p2,p3],{'10^6 [#/mL]','5*10^6','10^7'},'location','northwest');
+legend([p1,p2,p3],{['10^6 [#/mL], N=',num2str(length(T1.AggregateRadiusFilt))],['5*10^6, N=',num2str(length(T2.AggregateRadiusFilt))],['10^7, N=',num2str(length(T3.AggregateRadiusFilt))]},'location','northwest');
 set(gca,'fontsize',7);
 xticks([5:5:30]);
 yticks(1:2:10);
@@ -2302,7 +2990,7 @@ p3=plot(T3.Avg_Rad(ix3, 1), t3s, '^','markersize',4,'markeredgecolor',[.7,.7,.7]
 xlim([0,30]);
 ylim([0,9]);
 xlabel('Radius [\mum]');
-legend([p1,p2,p3],{'50 rpm','100','150'},'location','northwest');
+legend([p1,p2,p3],{['50 rpm, N=',num2str(length(T1.AggregateRadiusFilt))],['100, N=',num2str(length(T2.AggregateRadiusFilt))],['150, N=',num2str(length(T3.AggregateRadiusFilt))]},'location','northwest');
 set(gca,'fontsize',7);
 xticks([5:5:30]);
 yticks(1:2:10);
@@ -2419,10 +3107,10 @@ clearvars -except PRINT_FIGURES drive_folder printfolder res big_width lil_width
 datafolder = [drive_folder,':\My Drive\04_Manuscripts\02_ProjectEncounter\2025_Feb\01_ChangingConcentration\New_Data\'];
 filename = 'A_090mins_001_EDF.nd2_TD_c_Probabilities.mat';
 FilterFLPerArea = 5e3;
-FilterSize = [3, 50];
+FilterSize = [4, 50];
 MicroBeadDiam = 1; % microns
 
-T = LOAD_DATA_BIN_CALIBRATE([datafolder, filename], FilterFLPerArea, FilterSize, MicroBeadDiam);
+% T = LOAD_DATA_BIN_CALIBRATE([datafolder, filename], FilterFLPerArea, FilterSize, MicroBeadDiam);
 
 % Load data:
 X = load([datafolder, filename]);
@@ -2432,7 +3120,7 @@ AggregateRadius = X.XYres * sqrt(X.AggregateArea/pi);
 
 % Pre-allocate for some measurements:
 CCListFilt = X.CC.PixelIdxList;
-AggregateRadiusFilt = AggregateRadius;
+AggregateRadiusFilt1 = AggregateRadius;
 AggregateAreaFilt = X.AggregateArea;
 NumParticlesFilt = X.NumParticles;
 
@@ -2440,16 +3128,17 @@ NumParticlesFilt = X.NumParticles;
 FL_per_Area = X.IntegratedFL./X.AggregateArea;
 ix_filterFL = find(FL_per_Area > FilterFLPerArea);
 CCListFilt(ix_filterFL) = [];
-AggregateRadiusFilt(ix_filterFL) = [];
+AggregateRadiusFilt1(ix_filterFL) = [];
 AggregateAreaFilt(ix_filterFL) = [];
 NumParticlesFilt(ix_filterFL) = [];
 
 % Filter by size:
-ix_filterS = find(AggregateRadiusFilt < FilterSize(1) | AggregateRadiusFilt > FilterSize(2));
-AggregateRadiusFilt(ix_filterS) = [];
+ix_filterS = find(AggregateRadiusFilt1 < FilterSize(1) | AggregateRadiusFilt1 > FilterSize(2));
+AggregateRadiusFilt1(ix_filterS) = [];
 AggregateAreaFilt(ix_filterS) = [];
 CCListFilt(ix_filterS) = [];
 NumParticlesFilt(ix_filterS) = [];
+NumParticlesFilt1 = NumParticlesFilt;
 
 % Make a new CC array:
 CCFilt.Connectivity = X.CC.Connectivity;
@@ -2461,6 +3150,7 @@ CCFilt.PixelIdxList = CCListFilt;
 Measurements = regionprops(CCFilt, 'Area','EquivDiameter','Circularity','MajorAxisLength','MinorAxisLength','Perimeter');
 AggregateRadiusFilt = X.XYres * [Measurements.EquivDiameter]';
 AggregateCircularity = [Measurements.Circularity]';
+% figure; plot(AggregateRadiusFilt1, AggregateRadiusFilt/2,'.');
 
 % Binning by aggregate radius: --------------------------------------------
 nbins_guess = calcnbins(AggregateRadiusFilt,'all');
@@ -2589,7 +3279,7 @@ figure('units','centimeters','position',[3,3,18,6]);
 ax1 = axes('position',[.08,.15,.25,.80]); hold on; box on; set(gca,'linewidth',1);
 plot(AggDiam, AggCirc, '.','markersize',10,'color',[.6,.6,.6]);
 errorbar(Avg_Rad_Plot(:,1), Avg_Rad_Plot(:,5), Avg_Rad_Plot(:,6),'>','color',[.8,.4,.04],'markersize',5,'markerfacecolor',[.8,.4,.1],'markeredgecolor','none','linewidth',1,'capsize',6);
-xlabel('Aggregate Diameter [\mum]');
+xlabel('Group Diameter [\mum]');
 ylabel('Circularity');
 
 % PLot B: Num Particles vs. Circ
@@ -2597,7 +3287,7 @@ ax2 = axes('position',[.41,.15,.25,.80]); hold on; box on; set(gca,'linewidth',1
 plot(AggCirc, Num_Par_Plot, '.','markersize',5,'color',[.6,.6,.6]);
 % errorbar(Avg_Rad_Plot(:,5), Avg_Rad_Plot(:,3), Avg_Rad_Plot(:,4), '>','markersize',5,'markerfacecolor',[.8,.4,.1],'markeredgecolor','none','color',[.8,.4,.1],'capsize',.6);
 xlabel('Circularity');
-ylabel('No. Particles');
+ylabel('No. Microbeads');
 
 % Plot C: Circ thresholds:
 ax3 = axes('position',[.74,.15,.25,.80]); hold on; box on; set(gca,'linewidth',1);
@@ -2617,6 +3307,104 @@ if PRINT_FIGURES
     print([printfolder,'Supplemental_SizeShapeRelationship'],'-dpng',res);
     close(gcf);
 end
+
+% Reviewer comments: ------------------------------------------------------
+% Bin by circularity class - do we see higher variance by class?
+Measurements = regionprops(CCFilt, 'Area','EquivDiameter','Circularity','MajorAxisLength','MinorAxisLength','Perimeter');
+AggregateRadiusFilt = 0.5 * X.XYres * [Measurements.EquivDiameter]';
+AggregateCircularity = [Measurements.Circularity]';
+AggregateElongation = [Measurements.MajorAxisLength]'./[Measurements.MinorAxisLength]';
+
+nclasses = 5;
+Circ_Classes = linspace(0,1,nclasses+1);
+Measurements_Classes = cell(nclasses,1);
+ts = cell(nclasses,1);
+Avg_Rad = cell(nclasses,1);
+figure('units','centimeters','position',[3,3,10,10]); 
+Colors = bone(nclasses+1);
+% tiledlayout('flow');
+for cc = 1:(length(Circ_Classes)-1)
+    ix = find(AggregateCircularity > Circ_Classes(cc) & AggregateCircularity <= Circ_Classes(cc+1));
+    if ~isempty(ix)
+        Measurements_Classes{cc} = [AggregateRadiusFilt(ix), AggregateCircularity(ix), AggregateElongation(ix), NumParticlesFilt1(ix)];
+
+        % Within each circ bin, bin by aggregate radius and calc mean and
+        % variance:
+        aggrad = Measurements_Classes{cc}(:,1);
+        cirrad = Measurements_Classes{cc}(:,2);
+        numrad = Measurements_Classes{cc}(:,4);
+        nbins_guess = calcnbins(aggrad,'all');
+        Nbins = nbins_guess.scott;
+        % Edges_Rad = logspace(log10(min(aggrad)), log10(max(aggrad)), Nbins+1);
+        Edges_Rad = linspace(min(aggrad), max(aggrad), Nbins+1);
+        Bins_Rad  = mean([Edges_Rad(1:end-1); Edges_Rad(2:end)])';
+        [~,~,BinIx_Rad] = histcounts(aggrad, Edges_Rad);
+        
+        % Preallocate for space:
+        Group_Rad   = cell(length(Bins_Rad), 1);
+        Avg_Rad{cc} = zeros(length(Bins_Rad), 6);
+        N_Rad       = zeros(length(Bins_Rad), 1);
+        
+        for bb = 1:length(Bins_Rad)
+            ix_Rad = find(BinIx_Rad == bb);
+            Group_Rad{bb}(:,1) = aggrad(ix_Rad);
+            Group_Rad{bb}(:,2) = numrad(ix_Rad);
+            Group_Rad{bb}(:,3) = cirrad(ix_Rad);
+        
+            % Make averages:
+            N_Rad(bb) = length(ix_Rad);
+            if length(ix_Rad) > 2
+                NotOutliers = find(~isoutlier(Group_Rad{bb}(:,2),'mean'));
+        
+                Avg_Rad{cc}(bb,1) = mean(Group_Rad{bb}(NotOutliers,1)); % aggregate radius
+                Avg_Rad{cc}(bb,2) = std(Group_Rad{bb}(NotOutliers,1));
+                Avg_Rad{cc}(bb,3) = mean(Group_Rad{bb}(NotOutliers,2)); % number of particles
+                Avg_Rad{cc}(bb,4) = std(Group_Rad{bb}(NotOutliers,2));
+                Avg_Rad{cc}(bb,5) = mean(Group_Rad{bb}(NotOutliers,3)); % aggregate circularity
+                Avg_Rad{cc}(bb,6) = std(Group_Rad{bb}(NotOutliers,3));
+            else
+                %{
+                Avg_Rad(bb,1) = mean(Group_Rad{bb}(:,1));
+                Avg_Rad(bb,2) = std(Group_Rad{bb}(:,1));
+                Avg_Rad(bb,3) = mean(Group_Rad{bb}(:,2));
+                Avg_Rad(bb,4) = std(Group_Rad{bb}(:,2));
+                Avg_Rad(bb,5) = mean(Group_Rad{bb}(:,3));
+                Avg_Rad(bb,6) = std(Group_Rad{bb}(:,3));
+                %}
+            end
+        end
+
+        % nexttile; 
+        hold on; box on; set(gca,'linewidth',1);
+        ts{cc} = Avg_Rad{cc}(:,4).^2./Avg_Rad{cc}(:,3);
+        plot(Avg_Rad{cc}(:,1), ts{cc}, '.-','color',Colors(cc,:));
+    end
+end
+plot(0:40, 1*ones(1,41),'k:','linewidth',1);
+plot(0:40, 2*ones(1,41),'k:','linewidth',1);
+xlabel('Radius [\mum]');
+ylabel('test statistic');
+xticks([5,10,15,20,30]);
+
+figure('units','centimeters','position',[3,3,17.8,12]);
+tiledlayout('flow');
+for cc = 1:nclasses
+    nexttile;
+    hold on;
+    plot(Measurements_Classes{cc}(:,1), Measurements_Classes{cc}(:,4), '.');
+    errorbar(Avg_Rad{cc}(:,1), Avg_Rad{cc}(:,3), Avg_Rad{cc}(:,4), Avg_Rad{cc}(:,4), Avg_Rad{cc}(:,2), Avg_Rad{cc}(:,2), 'kd');
+    xlabel('Radius [\mum]');
+    ylabel('No. Particles')
+    yyaxis right;
+    plot(Measurements_Classes{cc}(:,1), Measurements_Classes{cc}(:,2), '.'); ylim([0,1]);
+end
+        
+if PRINT_FIGURES    
+    print([printfolder,'Supplemental_BinningByCirc'],'-dpng',res);
+    close(gcf);
+end
+
+
 
 %% Confocal segmentations:
 % Show one example segmentation process, then some plots.
@@ -2683,6 +3471,9 @@ y_reg_est = c_est(1) * x_reg_est + c_est(2);
 y_est = polyval(c_est, GroupVEst);
 residuals = GroupN - y_est;
 residuals_std = std(residuals);
+ss_res = sum((residuals.^2));
+ss_tot = sum((GroupN - mean(GroupN)).^2);
+r_squared = 1 - (ss_res./ss_tot)
 n = length(GroupN);
 x_mean = mean(GroupVEst);
 x_var = var(GroupVEst);
@@ -2693,6 +3484,7 @@ b_std_error = sqrt( 1/n * (var(GroupN) * sum(GroupVEst.^2))./ ((n-1)*x_var) );
 figure('units','centimeters','position',[3,3,18,5]);
 
 % Panel A: Raw image slice
+x_location = 65; y_location = 65; Scalebar_length = 2; PixelSize = 0.135;
 slice = 50;
 axA = axes('position',[.00,.05,.22,.90]);
 hold on; box on; set(gca,'linewidth',1);
@@ -2702,6 +3494,7 @@ xlim([60,170]);
 ylim([60,170]);
 xticks([]);
 yticks([]);
+quiver(x_location, y_location, Scalebar_length/PixelSize, 0, 'ShowArrowHead', 'off','color','w','linewidth',3);
 
 % Panel B: 3d surfaces
 axB = axes('position',[.22,.05,.22,.90]);
@@ -2908,6 +3701,408 @@ disp(['Sinking timescale : ',num2str(t_sinking,4)]);
 disp(['Kolmogorov timescale : ',num2str(t_kolmogorov,4)]);
 %}
 
+%% Supplement: What is the relationship between maximum occupancy density and attachment rate?
+p = (0:300)';
+r = linspace(1,100,1e2);
+[P,R] = meshgrid(p,r);
+S = P .* (4*pi*R.^2).^(-1);
+
+PHI = [.01,.1,.3,.9];
+% PHI = 0.02;
+
+figure('units','centimeters','position',[3,3,10,10]);
+tiledlayout('flow');
+for ii = 1:length(PHI)
+    phi0 = PHI(ii);
+    a0 = pi*0.5^2; % 1 micron diameter disk area
+    sigma0(ii) = phi0/a0;
+    
+    Stemp = S./sigma0(ii);
+    Stemp(Stemp > 1) = 1;
+    Stemp(5,1:10);
+    Stemp(10,1:10);
+    Stemp(20,1:25);
+
+    nexttile;
+    hold on; box on; set(gca,'linewidth',1);
+    contourf(R,P,Stemp,[0,.01,.1,.25,1],'k--','linewidth',1,'showtext','on');
+    xlabel('Group radius [\mum]');
+    ylabel('p');
+    xlim([0,50]);
+    ylim([0,100]);
+    xticks([0,10,20,30,40,50]);
+    yticks(0:10:300)
+    set(gca,'layer','top');
+    colormap('sky');
+    title(['\phi = ',num2str(PHI(ii))]);
+end
+
+% Print figure:
+if PRINT_FIGURES    
+    print([printfolder,'Supplemental_Langmuir'],'-dpng',res);
+    close(gcf);
+end
+
+
+
+%% Supplement: Theory diagrams for phage encounters via turbulence and diffusion separately:
+% Sweeping two variables:
+n_cells = logspace(0,4,100); % number of cells in a group
+n_p = logspace(4,7,50); % phage concentration
+radius_phage = 1e-5; % cm
+correction_factor = 1;
+
+% Two models: Diffusion only, or turbulence only
+for nn = 1:length(n_cells)
+    for pp = 1:length(n_p)
+        Gamma_D(nn,pp) = computePhageAcquisitionRate(n_cells(nn), n_p(pp));
+        Gamma_T(nn,pp) = computeFoodAcquisitionRate(n_cells(nn), radius_phage, n_p(pp));
+    end
+end
+Gamma_N = Gamma_T + Gamma_D;
+
+% Consider the timescale to get X cells from a single cell - is this possible?
+Colormap = [0,60,48; 
+            1,102,94;
+            53,151,143;
+            128,205,193;
+            199,234,229;
+            245,245,245;
+            246,232,195;
+            223,194,125;
+            191,129,45;
+            140,81,10;
+            84,48,5]/255;
+doubling_time = 30*60; % secs
+assembly_time = (log2(n_cells) * doubling_time)/3600; % in hrs
+Assembly_Time = repmat(assembly_time', [1,length(n_p)]);
+A = correction_factor*(1./Gamma_D);
+B = correction_factor*(1./Gamma_N);
+TimeMatrix_Hrs_D = A./3600;
+TimeMatrix_Hrs_N = B./3600;
+AssemblyMatrix = PossibilityMatrix./Assembly_Time;
+
+figure('units','centimeters','position',[3,3,15,8]);
+ax1 = axes('position',[.08,.10,.45,.88]);
+hold on; box on; set(gca,'linewidth',1);
+imagesc(n_p, n_cells, TimeMatrix_Hrs_D);
+colormap(ax1, Colormap);
+[C,h] = contour(n_p, n_cells, TimeMatrix_Hrs_D,[20,60,180,600]/60,'w-','linewidth',1.5,'ShowText',true,'LabelFormat','%2.2f [hrs]');
+clabel(C,h,'fontsize',8,'color','w');
+% text(2e4,3e0,'Can assemble','fontsize',8,'color','w');
+% text(1.5e6, 2e3,{'Cannot','assemble'},'fontsize',8,'color','w');
+% clim([0,10]);
+clim([0,10]);
+xlim([1e4,1e7]);
+ylim([1,1e4]);
+yticks([1,10,100,1e3,1e4]);
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+set(gca,'layer','top');
+set(gca,'fontsize',7);
+xlabel('Infect. Phage Conc [#/mL]');
+ylabel('Group Biomass [# Cells]');
+set(gca,'ticklength',[.03,.03]);
+
+ax2 = axes('position',[.53,.10,.45,.88]);
+hold on; box on; set(gca,'linewidth',1);
+imagesc(n_p, n_cells, TimeMatrix_Hrs_N);
+colormap(ax2, Colormap);
+[C,h] = contour(n_p, n_cells, TimeMatrix_Hrs_N,[20,60,180,600]/60,'w-','linewidth',1.5,'ShowText',true,'LabelFormat','%2.2f [hrs]');
+clabel(C,h,'fontsize',8,'color','w');
+% text(2e4,3e0,'Can assemble','fontsize',8,'color','w');
+% text(1.5e6, 2e3,{'Cannot','assemble'},'fontsize',8,'color','w');
+% clim([0,10]);
+clim([0,10]);
+xlim([1e4,1e7]);
+ylim([1,1e4]);
+yticks([1,10,100,1e3,1e4]);
+yticklabels({'','','','',''});
+set(gca,'xscale','log');
+set(gca,'yscale','log');
+set(gca,'layer','top');
+set(gca,'fontsize',7);
+xlabel('Infect. Phage Conc [#/mL]');
+set(gca,'ticklength',[.03,.03]);
+
+% Print figure:
+if PRINT_FIGURES    
+    print([printfolder,'Supplemental_InfectionTimescales_DiffTurb'],'-dpng',res);
+    close(gcf);
+end
+
+
+
+
+
+
+
+
+
+
+%{
+%% Supplement: AMINE BEADS concentrations of beads
+datafolder = 'E:\2025\01_ProjectEncounter\20251119_MicrobeadsRevisions\Bead_Concentration_Tests\Nikon\10x\';
+img_folder = 'E:\2025\01_ProjectEncounter\20251119_MicrobeadsRevisions\Bead_Concentration_Tests\Confocal\';
+load([datafolder,'BeadConcentration_Nikon10x.mat']);
+Ni = ni(ixs);
+Nbar = mean(Ni,2);
+Nerr = std(Ni,0,2);
+N_type_stats = [Nbar, Nerr];
+x_type = 2:3:length(filelist);
+y_type = repelem(x_type,3);
+r_type = repmat([-.5,0,.5],1,8);
+y_type = y_type + r_type;
+
+figure('units','centimeters','position',[3,3, lil_width, 11])
+tiledlayout(2,1,'TileSpacing','compact','Padding','compact');
+nexttile; hold on; box on; set(gca,'linewidth',1);
+bar(x_type(1:4), Nbar(1:4), 0.85, 'facecolor',[.8,.4,.1],'edgecolor','k','facealpha',1,'linewidth',1);
+bar(x_type(5:end), Nbar(5:end), 0.85, 'facecolor',[.2,.4,.8],'edgecolor','k','facealpha',1,'linewidth',1);
+errorbar(x_type, Nbar, Nerr, 'k.','markersize',1,'linewidth',1,'capsize',6);
+plot(y_type, STATS(:,1), 'ko','linewidth',1);
+xticks(x_type);
+xticklabels({'T=0, Alg','T=90, Alg','T=0, noc','T=90, noc','T=0, alg','T=90, alg','T=0, noc','T=90, noc'});
+ylabel('No. objects');
+xlim([0,25]);
+set(gca,'layer','top');
+set(gca,'fontsize',7);
+
+nexttile; hold on; box on; set(gca,'linewidth',1);
+errorbar(y_type(1:12), STATS(1:12,2), STATS(1:12,3), 'pentagram','linewidth',1,'capsize',6,'color',[.8,.4,.1]);
+errorbar(y_type(13:end), STATS(13:end,2), STATS(13:end,3), 'o','linewidth',1,'capsize',6,'color',[.2,.4,.8]);
+xticks(x_type);
+xticklabels({'T=0, Alg','T=90, Alg','T=0, noc','T=90, noc','T=0, alg','T=90, alg','T=0, noc','T=90, noc'});
+ylabel('Area [px]');
+xlim([0,25]);
+set(gca,'fontsize',7);
+
+% Determine what the relative difference in concentration is:
+RelativeConcentrationRatio = mean(Nbar(1:4))./mean(Nbar(5:end));
+disp(['Relative concentration ratio = ',num2str(RelativeConcentrationRatio)]);
+
+% Show the amine beads under confocal:
+ax = axes('position',[.55,.26,.38,.20]); 
+% hold on; box on; set(gca,'linewidth',1);
+img = imread([img_folder,'Montage_Examples_Amine_Alg_90mins_5um_scalebar.tif']);
+imshow(img); colormap('gray');
+xticks([]);
+yticks([]);
+
+
+
+
+%% Supplement: AMINE BEADS supplemental panels
+datafolder = 'E:\2025\01_ProjectEncounter\20251119_MicrobeadsRevisions\MATs\';
+datalist = dir([datafolder, '*comb.mat']);
+
+FL_per_area = 4e3;
+FilterSize = [4,100];
+FilterNoParts = [0, 0.12];
+
+% Organize the data:
+TimePts = [30,60,90,120,250]'; % mins
+AmineIX = [1,3,5,7,9];
+CarbIX = [2,4,6,8,10];
+
+% Amine separate:
+figure('units','centimeters','position',[3,3,big_width,7]);
+tiledlayout(2,5,'TileSpacing','none','Padding','compact');
+for tt = 1:length(TimePts)
+    amine_ixs = AmineIX(tt);
+
+    % Load the data for the current amine index
+    disp(datalist(amine_ixs).name);
+    X = LOAD_DATA_BIN_CALIBRATE_Revisions([datafolder, datalist(amine_ixs).name], FL_per_area, FilterSize, FilterNoParts, 1);
+
+    % Plot:
+    nexttile; 
+    hold on; box on; set(gca,'linewidth',1);
+    plot(X.AggregateRadiusFilt, X.NumParticlesFilt, 'pentagram', 'markersize', 4,'color',[.8,.4,.08]);
+    errorbar(X.Avg_Particles(:,1), X.Bins_Particles, 0.6*ones(length(X.Avg_Particles),1), 0.6*ones(length(X.Avg_Particles),1), X.Avg_Particles(:,2), X.Avg_Particles(:,2), 'kd','markersize',4,'markerfacecolor','k','linewidth',1);
+    plot(X.X_Particles(:,2), X.R_Particles, '-','linewidth',1,'color',[.8,.2,.2]);    
+    text(5,50,['\lambda=',num2str(X.B_Particles(2),2),'\pm',num2str(2*X.B_Particles(3),2)],'fontsize',7);
+
+    if tt == 1
+        ylabel('No. microbeads');
+        yticks([1,10,100]);
+        yticklabels({1,10,100});
+    else
+        yticks([1,10,100]);
+        yticklabels({'','',''});
+        xticks([10,100]);
+        xticklabels({'',''});
+    end
+    set(gca,'xscale','log');
+    set(gca,'yscale','log');
+    set(gca,'fontsize',7);
+    xlim([FilterSize(1), FilterSize(2)]);
+    ylim([5e-1,1e2]);
+    % title([num2str(X.B_Particles(2)),' \pm ',num2str(X.B_Particles(3))])
+end
+
+% Carboxyl separate:
+for tt = 1:length(TimePts)
+    carb_ixs = CarbIX(tt);
+
+    % Load the data for the current amine index
+    disp(datalist(carb_ixs).name);
+    X = LOAD_DATA_BIN_CALIBRATE_Revisions([datafolder, datalist(carb_ixs).name], FL_per_area, FilterSize, FilterNoParts, 1);
+
+    % Plot:
+    nexttile; hold on; box on; set(gca,'linewidth',1);
+    plot(X.AggregateRadiusFilt, X.NumParticlesFilt, 'o', 'markersize', 4,'color',[.2,.4,.8]);
+    errorbar(X.Avg_Particles(:,1), X.Bins_Particles, 0.6*ones(length(X.Avg_Particles),1), 0.6*ones(length(X.Avg_Particles),1), X.Avg_Particles(:,2), X.Avg_Particles(:,2), 'kd','markersize',4,'markerfacecolor','k','linewidth',1);
+    plot(X.X_Particles(:,2), X.R_Particles, '-','linewidth',1,'color',[.8,.2,.2]);    
+    text(5,60,['\lambda=',num2str(X.B_Particles(2),2),'\pm',num2str(2*X.B_Particles(3),2)],'fontsize',7);
+    
+    if tt == 1
+        ylabel('No. microbeads');
+        yticks([1,10,100]);
+        yticklabels({1,10,100});
+    else
+        yticks([1,10,100]);
+        yticklabels({'','',''});
+    end
+    xlabel('Radius [\mum]');
+    set(gca,'xscale','log');
+    set(gca,'yscale','log');
+    set(gca,'fontsize',7);
+    xlim([FilterSize(1), FilterSize(2)]);
+    ylim([5e-1,1e2]);
+    % title([num2str(X.B_Particles(2)),' \pm ',num2str(X.B_Particles(3))])
+end
+
+% Put avgs on the same plot:
+RelativeConcentrationRatio = 1;
+figure('units','centimeters','position',[3,3,big_width,7]);
+tiledlayout(2,5,'TileSpacing','none','Padding','compact');
+for tt = 1:length(TimePts)
+    amine_ixs = AmineIX(tt);
+    carb_ixs = CarbIX(tt);
+
+    % Load the data for the current amine index
+    disp(datalist(carb_ixs).name);
+    X = LOAD_DATA_BIN_CALIBRATE_Revisions([datafolder, datalist(carb_ixs).name], FL_per_area, FilterSize, FilterNoParts, 1);
+    Y = LOAD_DATA_BIN_CALIBRATE_Revisions([datafolder, datalist(amine_ixs).name], FL_per_area, FilterSize, FilterNoParts, 1);
+
+    % Plot:
+    nexttile; hold on; box on; set(gca,'linewidth',1);
+    errorbar(X.Avg_Particles(:,1), X.Bins_Particles, 0.6*ones(length(X.Avg_Particles),1), 0.6*ones(length(X.Avg_Particles),1), X.Avg_Particles(:,2), X.Avg_Particles(:,2), 'o','markersize',4,'markerfacecolor',[.2,.4,.8],'linewidth',1,'markeredgecolor','k','color',[.2,.4,.8]);
+    plot(X.X_Particles(:,2), X.R_Particles, '-','linewidth',1.5,'color','k');
+    errorbar(Y.Avg_Particles(:,1), Y.Bins_Particles./RelativeConcentrationRatio, 0.6*ones(length(Y.Avg_Particles),1), 0.6*ones(length(Y.Avg_Particles),1), Y.Avg_Particles(:,2), Y.Avg_Particles(:,2), 'pentagram','markersize',6,'markerfacecolor',[.8,.4,.1],'linewidth',1,'markeredgecolor','k','color',[.8,.4,.1]);
+    plot(Y.X_Particles(:,2), Y.R_Particles./RelativeConcentrationRatio, '-','linewidth',1.5,'color','k'); 
+    
+
+    if tt == 1
+        ylabel('No. microbeads');
+        yticks([1,10,100]);
+        yticklabels({1,10,100});
+    else
+        yticks([1,10,100]);
+        yticklabels({'','',''});
+    end
+    % xlabel('Radius [\mum]');
+    set(gca,'xscale','log');
+    set(gca,'yscale','log');
+    set(gca,'fontsize',7);
+    xlim([FilterSize(1), 50]);
+    ylim([5e-1,1e2]);
+    xticks([5,10,25]);
+    xticklabels({'','',''});
+end
+
+% Scale by relative concentration:
+RelativeConcentrationRatio = 0.60444;
+for tt = 1:length(TimePts)
+    amine_ixs = AmineIX(tt);
+    carb_ixs = CarbIX(tt);
+
+    % Load the data for the current amine index
+    disp(datalist(carb_ixs).name);
+    X = LOAD_DATA_BIN_CALIBRATE_Revisions([datafolder, datalist(carb_ixs).name], FL_per_area, FilterSize, FilterNoParts, 1);
+    Y = LOAD_DATA_BIN_CALIBRATE_Revisions([datafolder, datalist(amine_ixs).name], FL_per_area, FilterSize, FilterNoParts, 1);
+
+    % Plot:
+    nexttile; hold on; box on; set(gca,'linewidth',1);
+    errorbar(X.Avg_Particles(:,1), X.Bins_Particles, 0.6*ones(length(X.Avg_Particles),1), 0.6*ones(length(X.Avg_Particles),1), X.Avg_Particles(:,2), X.Avg_Particles(:,2), 'o','markersize',4,'markerfacecolor',[.2,.4,.8],'linewidth',1,'markeredgecolor','k','color',[.2,.4,.8]);
+    plot(X.X_Particles(:,2), X.R_Particles, '-','linewidth',1.5,'color','k');
+    errorbar(Y.Avg_Particles(:,1), Y.Bins_Particles./RelativeConcentrationRatio, 0.6*ones(length(Y.Avg_Particles),1), 0.6*ones(length(Y.Avg_Particles),1), Y.Avg_Particles(:,2), Y.Avg_Particles(:,2), 'pentagram','markersize',6,'markerfacecolor',[.8,.4,.1],'linewidth',1,'markeredgecolor','k','color',[.8,.4,.1]);
+    plot(Y.X_Particles(:,2), Y.R_Particles./RelativeConcentrationRatio, '-','linewidth',1.5,'color','k'); 
+    
+
+    if tt == 1
+        ylabel('No. microbeads');
+        yticks([1,10,100]);
+        yticklabels({1,10,100});
+    else
+        yticks([1,10,100]);
+        yticklabels({'','',''});
+    end
+    xlabel('Radius [\mum]');
+    set(gca,'xscale','log');
+    set(gca,'yscale','log');
+    set(gca,'fontsize',7);
+    xlim([FilterSize(1), 50]);
+    ylim([5e-1,1e2]);
+    xticks([5,10,25]);
+end
+
+
+
+%% Supplement: AMINE BEADS, directly compare power law exponents:
+datafolder = 'E:\2025\01_ProjectEncounter\20251119_MicrobeadsRevisions\MATs\';
+t_list = dir([datafolder,'*comb.mat']);
+
+FilterFLPerArea = 4e3;
+FilterSize = [4,100];
+FilterNoParts = [1e-4, 0.12];
+
+TimePts = [30,60,90,120,250]'; % mins
+AmineIX = [1,3,5,7,9];
+CarbIX = [2,4,6,8,10];
+
+% Load timetracks of carboxyl beads: --------------------------------------
+for tt = 1:length(CarbIX)
+    % Load data for carboxyl beads
+    W = LOAD_DATA_BIN_CALIBRATE_Revisions([datafolder, t_list(CarbIX(tt)).name], FilterFLPerArea, FilterSize, FilterNoParts, 1);
+    W_Carboxyl(tt) = W;
+end
+
+% Load timetracks of amine beads: -----------------------------------------
+for tt = 1:length(AmineIX)
+    W = LOAD_DATA_BIN_CALIBRATE_Revisions([datafolder, t_list(AmineIX(tt)).name], FilterFLPerArea, FilterSize, FilterNoParts, 1);
+    W_Amine(tt) = W;
+end
+
+% Specifically compare the regression slopes:
+Colors = [.2,.4,.8; .8,.4,.1];
+figure('units','centimeters','position',[3,3,lil_width,lil_width]); 
+hold on; box on; set(gca,'linewidth',1);
+B_c = [W_Carboxyl.B_Particles];
+B_a = [W_Amine.B_Particles];
+errorbar(TimePts, B_c(2,:), 2*B_c(3,:), 'o','markersize',7,'markerfacecolor',Colors(1,:),'color',Colors(1,:),'linewidth',1,'markeredgecolor','k');
+errorbar(TimePts, B_a(2,:), 2*B_a(3,:), 'pentagram','markersize',9,'markerfacecolor',Colors(2,:),'color',Colors(2,:),'linewidth',1,'markeredgecolor','k');
+xlabel('Time [min]');
+ylabel('\lambda');
+
+% Welch's t-test to compare the slopes:
+s_delta = sqrt(B_c(3,:).^2 + B_a(3,:).^2); % combined std devs
+t = (B_a(2,:) - B_c(2,:))./s_delta;
+%}
+
+
+
+
+
+
+
+
+
+
+
+
+
 %% Functions
 function [X] = LOAD_DATA_BIN_CALIBRATE(filename, FilterFLPerArea, FilterSize, MicrobeadDiam)
     % Loading, filtering, calibrating: ------------------------------------
@@ -2977,7 +4172,7 @@ function [X] = LOAD_DATA_BIN_CALIBRATE(filename, FilterFLPerArea, FilterSize, Mi
     nbins_guess = calcnbins(X.AggregateRadiusFilt,'all');
     Nbins = nbins_guess.scott;
     % Nbins = 10;
-    Edges_Rad = linspace(min(X.AggregateRadiusFilt), max(X.AggregateRadiusFilt), Nbins);
+    % Edges_Rad = linspace(min(X.AggregateRadiusFilt), max(X.AggregateRadiusFilt), Nbins);
     Edges_Rad = logspace(log10(min(X.AggregateRadiusFilt)), log10(max(X.AggregateRadiusFilt)), Nbins);
     Bins_Rad  = mean([Edges_Rad(1:end-1); Edges_Rad(2:end)])';
     [~,~,BinIx_Rad] = histcounts(X.AggregateRadiusFilt, Edges_Rad);
@@ -3492,4 +4687,64 @@ function [f, PCPoiss, chi2] = DO_POISSON_STUFF(X, Nmin, FigViz)
         plot(X.Avg_Rad(:,1), chi2(:,3), '-');
         xlabel('Radius [\mu m]');
     end
+end
+
+function [ha, pos] = tight_subplot(Nh, Nw, gap, marg_h, marg_w)
+    % tight_subplot creates "subplot" axes with adjustable gaps and margins
+    %
+    % [ha, pos] = tight_subplot(Nh, Nw, gap, marg_h, marg_w)
+    %
+    %   in:  Nh      number of axes in hight (vertical direction)
+    %        Nw      number of axes in width (horizontaldirection)
+    %        gap     gaps between the axes in normalized units (0...1)
+    %                   or [gap_h gap_w] for different gaps in height and width 
+    %        marg_h  margins in height in normalized units (0...1)
+    %                   or [lower upper] for different lower and upper margins 
+    %        marg_w  margins in width in normalized units (0...1)
+    %                   or [left right] for different left and right margins 
+    %
+    %  out:  ha     array of handles of the axes objects
+    %                   starting from upper left corner, going row-wise as in
+    %                   subplot
+    %        pos    positions of the axes objects
+    %
+    %  Example: ha = tight_subplot(3,2,[.01 .03],[.1 .01],[.01 .01])
+    %           for ii = 1:6; axes(ha(ii)); plot(randn(10,ii)); end
+    %           set(ha(1:4),'XTickLabel',''); set(ha,'YTickLabel','')
+    % Pekka Kumpulainen 21.5.2012   @tut.fi
+    % Tampere University of Technology / Automation Science and Engineering
+    if nargin<3; gap = .02; end
+    if nargin<4 || isempty(marg_h); marg_h = .05; end
+    if nargin<5; marg_w = .05; end
+    if numel(gap)==1; 
+        gap = [gap gap];
+    end
+    if numel(marg_w)==1; 
+        marg_w = [marg_w marg_w];
+    end
+    if numel(marg_h)==1; 
+        marg_h = [marg_h marg_h];
+    end
+    axh = (1-sum(marg_h)-(Nh-1)*gap(1))/Nh; 
+    axw = (1-sum(marg_w)-(Nw-1)*gap(2))/Nw;
+    py = 1-marg_h(2)-axh; 
+    % ha = zeros(Nh*Nw,1);
+    ii = 0;
+    for ih = 1:Nh
+        px = marg_w(1);
+        
+        for ix = 1:Nw
+            ii = ii+1;
+            ha(ii) = axes('Units','normalized', ...
+                'Position',[px py axw axh], ...
+                'XTickLabel','', ...
+                'YTickLabel','');
+            px = px+axw+gap(2);
+        end
+        py = py-axh-gap(1);
+    end
+    if nargout > 1
+        pos = get(ha,'Position');
+    end
+    ha = ha(:);
 end
